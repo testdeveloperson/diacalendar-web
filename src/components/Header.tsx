@@ -18,7 +18,7 @@ export default function Header() {
             </svg>
           </div>
           <span className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-            SeoulMetroSpace
+            서교공 커뮤니티
           </span>
         </Link>
 
