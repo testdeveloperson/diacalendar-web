@@ -1,17 +1,21 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
 
 export default function RecoverPage() {
-  const { recoverPassword } = useAuth()
+  const { recoverPassword, verifyRecoveryOtp, updatePassword } = useAuth()
+  const router = useRouter()
   const [email, setEmail] = useState('')
+  const [otp, setOtp] = useState('')
+  const [newPassword, setNewPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [sent, setSent] = useState(false)
+  const [step, setStep] = useState<'email' | 'otp' | 'password'>('email')
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     setLoading(true)
@@ -21,30 +25,139 @@ export default function RecoverPage() {
       setError(error)
       setLoading(false)
     } else {
-      setSent(true)
+      setStep('otp')
+      setLoading(false)
     }
   }
 
-  if (sent) {
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    setLoading(true)
+
+    const { error } = await verifyRecoveryOtp(email, otp)
+    if (error) {
+      setError(error)
+      setLoading(false)
+    } else {
+      setStep('password')
+      setLoading(false)
+    }
+  }
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    setLoading(true)
+
+    const { error } = await updatePassword(newPassword)
+    if (error) {
+      setError(error)
+      setLoading(false)
+    } else {
+      router.push('/board')
+    }
+  }
+
+  if (step === 'password') {
     return (
       <div className="max-w-sm mx-auto mt-10 sm:mt-20">
-        <div className="bg-white rounded-2xl border border-gray-200/80 p-6 sm:p-8 shadow-sm text-center">
-          <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
+        <div className="bg-white rounded-2xl border border-gray-200/80 p-6 sm:p-8 shadow-sm">
+          <div className="text-center mb-8">
+            <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900">새 비밀번호 설정</h1>
+            <p className="text-sm text-gray-400 mt-1">새로운 비밀번호를 입력해주세요</p>
           </div>
-          <h1 className="text-2xl font-bold mb-2">메일 발송 완료</h1>
-          <p className="text-gray-500 mb-6 text-sm leading-relaxed">
-            비밀번호 재설정 링크를 보냈습니다.<br />
-            메일함을 확인해주세요.
-          </p>
-          <Link
-            href="/auth/login"
-            className="inline-block px-6 py-3 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 shadow-sm"
-          >
-            로그인 페이지로 이동
-          </Link>
+
+          <form onSubmit={handleUpdatePassword} className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">새 비밀번호</label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                required
+                minLength={6}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white text-sm placeholder-gray-400"
+                placeholder="6자 이상"
+                autoFocus
+              />
+            </div>
+
+            {error && (
+              <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 px-4 py-3 rounded-xl">
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-50 shadow-sm"
+            >
+              {loading ? '변경 중...' : '비밀번호 변경'}
+            </button>
+          </form>
+        </div>
+      </div>
+    )
+  }
+
+  if (step === 'otp') {
+    return (
+      <div className="max-w-sm mx-auto mt-10 sm:mt-20">
+        <div className="bg-white rounded-2xl border border-gray-200/80 p-6 sm:p-8 shadow-sm">
+          <div className="text-center mb-8">
+            <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900">이메일 인증</h1>
+            <p className="text-sm text-gray-400 mt-1">
+              {email}으로<br />인증번호를 발송했습니다
+            </p>
+          </div>
+
+          <form onSubmit={handleVerifyOtp} className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">인증번호</label>
+              <input
+                type="text"
+                value={otp}
+                onChange={e => setOtp(e.target.value)}
+                required
+                maxLength={6}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white text-sm placeholder-gray-400 text-center text-lg tracking-widest"
+                placeholder="000000"
+                autoFocus
+              />
+            </div>
+
+            {error && (
+              <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 px-4 py-3 rounded-xl">
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading || otp.length < 6}
+              className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-50 shadow-sm"
+            >
+              {loading ? '확인 중...' : '인증 확인'}
+            </button>
+          </form>
         </div>
       </div>
     )
@@ -60,10 +173,10 @@ export default function RecoverPage() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-gray-900">비밀번호 찾기</h1>
-          <p className="text-sm text-gray-400 mt-1">가입한 이메일로 재설정 링크를 보내드립니다</p>
+          <p className="text-sm text-gray-400 mt-1">가입한 이메일로 인증번호를 보내드립니다</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSendOtp} className="space-y-4">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">이메일</label>
             <input
@@ -90,7 +203,7 @@ export default function RecoverPage() {
             disabled={loading}
             className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-50 shadow-sm"
           >
-            {loading ? '발송 중...' : '재설정 메일 보내기'}
+            {loading ? '발송 중...' : '인증번호 보내기'}
           </button>
         </form>
 

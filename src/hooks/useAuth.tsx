@@ -11,9 +11,12 @@ interface AuthContextType {
   isLoading: boolean
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
   signUp: (email: string, password: string) => Promise<{ error: string | null }>
+  verifyOtp: (email: string, token: string) => Promise<{ error: string | null }>
   setNicknameForUser: (nickname: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
   recoverPassword: (email: string) => Promise<{ error: string | null }>
+  verifyRecoveryOtp: (email: string, token: string) => Promise<{ error: string | null }>
+  updatePassword: (password: string) => Promise<{ error: string | null }>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -74,9 +77,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
     })
     if (error) {
       if (error.message.includes('User already registered')) {
@@ -88,6 +88,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: error.message }
     }
 
+    return { error: null }
+  }
+
+  const verifyOtp = async (email: string, token: string) => {
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: 'signup',
+    })
+    if (error) {
+      if (error.message.includes('Token has expired')) {
+        return { error: '인증번호가 만료되었습니다. 다시 가입해주세요.' }
+      }
+      if (error.message.includes('Invalid') || error.message.includes('invalid')) {
+        return { error: '인증번호가 올바르지 않습니다' }
+      }
+      return { error: error.message }
+    }
     return { error: null }
   }
 
@@ -115,8 +133,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: null }
   }
 
+  const verifyRecoveryOtp = async (email: string, token: string) => {
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: 'recovery',
+    })
+    if (error) {
+      if (error.message.includes('Token has expired')) {
+        return { error: '인증번호가 만료되었습니다. 다시 시도해주세요.' }
+      }
+      if (error.message.includes('Invalid') || error.message.includes('invalid')) {
+        return { error: '인증번호가 올바르지 않습니다' }
+      }
+      return { error: error.message }
+    }
+    return { error: null }
+  }
+
+  const updatePassword = async (password: string) => {
+    const { error } = await supabase.auth.updateUser({ password })
+    if (error) return { error: error.message }
+    return { error: null }
+  }
+
   return (
-    <AuthContext.Provider value={{ user, session, nickname, isLoading, signIn, signUp, setNicknameForUser, signOut, recoverPassword }}>
+    <AuthContext.Provider value={{ user, session, nickname, isLoading, signIn, signUp, verifyOtp, setNicknameForUser, signOut, recoverPassword, verifyRecoveryOtp, updatePassword }}>
       {children}
     </AuthContext.Provider>
   )
