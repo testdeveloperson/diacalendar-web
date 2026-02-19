@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useRef, useEffect } from 'react'
 import { useCategories } from '@/hooks/useCategories'
 
 interface CategoryFilterProps {
@@ -9,32 +10,75 @@ interface CategoryFilterProps {
 
 export default function CategoryFilter({ selected, onChange }: CategoryFilterProps) {
   const { categories } = useCategories()
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  const selectedLabel = selected
+    ? (categories.find(c => c.id === selected)?.label ?? selected)
+    : '전체'
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
   return (
-    <div className="flex gap-2 flex-wrap">
+    <div ref={ref} className="relative">
       <button
-        onClick={() => onChange(null)}
-        className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-          selected === null
-            ? 'bg-blue-600 text-white shadow-sm'
-            : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-        }`}
+        onClick={() => setOpen(prev => !prev)}
+        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
       >
-        전체
-      </button>
-      {categories.map(cat => (
-        <button
-          key={cat.id}
-          onClick={() => onChange(cat.id)}
-          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-            selected === cat.id
-              ? 'bg-blue-600 text-white shadow-sm'
-              : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-          }`}
+        {selectedLabel}
+        <svg
+          className={`w-4 h-4 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`}
+          fill="none" stroke="currentColor" viewBox="0 0 24 24"
         >
-          {cat.label}
-        </button>
-      ))}
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-11 bg-white rounded-xl shadow-xl border border-gray-200/60 py-1.5 z-50 min-w-[140px]">
+          <button
+            onClick={() => { onChange(null); setOpen(false) }}
+            className={`flex items-center justify-between w-full px-4 py-2.5 text-sm transition-colors ${
+              selected === null
+                ? 'text-blue-600 font-semibold bg-blue-50'
+                : 'text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            전체
+            {selected === null && (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </button>
+          {categories.map(cat => (
+            <button
+              key={cat.id}
+              onClick={() => { onChange(cat.id); setOpen(false) }}
+              className={`flex items-center justify-between w-full px-4 py-2.5 text-sm transition-colors ${
+                selected === cat.id
+                  ? 'text-blue-600 font-semibold bg-blue-50'
+                  : 'text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              {cat.label}
+              {selected === cat.id && (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
