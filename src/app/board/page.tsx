@@ -10,6 +10,7 @@ import PostCard from '@/components/PostCard'
 
 const PAGE_SIZE = 20
 const POST_SELECT = 'id,author_id,title,content,category,created_at,profiles(nickname),comments(count),post_views(count),post_reactions(count)'
+const LAST_VISITED_KEY = 'board_last_visited_at'
 
 export default function BoardPage() {
   const { user } = useAuth()
@@ -23,6 +24,8 @@ export default function BoardPage() {
   const [blockedIds, setBlockedIds] = useState<Set<string>>(new Set())
   const [guidelinesAccepted, setGuidelinesAccepted] = useState(false)
   const [showGuidelines, setShowGuidelines] = useState(false)
+  const [newPostCount, setNewPostCount] = useState(0)
+  const lastVisitedRef = useRef<string | null>(null)
   const offsetRef = useRef(0)
 
   useEffect(() => {
@@ -38,6 +41,22 @@ export default function BoardPage() {
 
   useEffect(() => {
     setGuidelinesAccepted(localStorage.getItem('guidelines_accepted') === 'true')
+  }, [])
+
+  // 마지막 방문 시간 읽기 + 페이지 떠날 때 갱신
+  useEffect(() => {
+    const stored = localStorage.getItem(LAST_VISITED_KEY)
+    lastVisitedRef.current = stored
+
+    const updateVisitTime = () => {
+      localStorage.setItem(LAST_VISITED_KEY, new Date().toISOString())
+    }
+
+    window.addEventListener('beforeunload', updateVisitTime)
+    return () => {
+      window.removeEventListener('beforeunload', updateVisitTime)
+      updateVisitTime()
+    }
   }, [])
 
   const fetchPosts = useCallback(async (reset = true) => {
@@ -73,6 +92,15 @@ export default function BoardPage() {
       const filtered = rawPosts.filter(p => !blockedIds.has(p.author_id))
       if (reset) {
         setPosts(filtered)
+        // 마지막 방문 이후 새 글 카운트 (카테고리/검색 필터 없을 때만)
+        if (!category && !searchQuery.trim() && lastVisitedRef.current) {
+          const newCount = filtered.filter(
+            p => new Date(p.created_at) > new Date(lastVisitedRef.current!)
+          ).length
+          setNewPostCount(newCount)
+        } else {
+          setNewPostCount(0)
+        }
       } else {
         setPosts(prev => [...prev, ...filtered])
       }
@@ -214,8 +242,21 @@ export default function BoardPage() {
         </div>
       ) : (
         <div className="space-y-3">
+          {newPostCount > 0 && (
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600 font-medium">
+              <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />
+              지난 방문 이후 새 글 {newPostCount}개가 등록되었습니다
+            </div>
+          )}
           {posts.map(post => (
-            <PostCard key={post.id} post={post} />
+            <PostCard
+              key={post.id}
+              post={post}
+              isNew={
+                !!lastVisitedRef.current &&
+                new Date(post.created_at) > new Date(lastVisitedRef.current)
+              }
+            />
           ))}
 
           {hasMore && (

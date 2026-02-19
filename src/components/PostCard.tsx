@@ -5,9 +5,10 @@ import { Post, getCategoryLabel, getCommentCount, formatRelativeTime } from '@/l
 
 interface PostCardProps {
   post: Post
+  isNew?: boolean
 }
 
-export default function PostCard({ post }: PostCardProps) {
+export default function PostCard({ post, isNew }: PostCardProps) {
   const commentCount = getCommentCount(post)
 
   return (
@@ -23,6 +24,11 @@ export default function PostCard({ post }: PostCardProps) {
               }`}>
                 {getCategoryLabel(post.category)}
               </span>
+              {isNew && (
+                <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-red-500 text-white">
+                  N
+                </span>
+              )}
             </div>
 
             <h3 className="font-semibold text-gray-900 mb-1.5 line-clamp-1 group-hover:text-blue-600 transition-colors text-base">
