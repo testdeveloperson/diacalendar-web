@@ -35,6 +35,7 @@ export default function BoardPage() {
   const [guidelinesAccepted, setGuidelinesAccepted] = useState(false)
   const [showGuidelines, setShowGuidelines] = useState(false)
   const [newPostCount, setNewPostCount] = useState(0)
+  const [fetchError, setFetchError] = useState(false)
   const lastVisitedRef = useRef<string | null>(null)
   const offsetRef = useRef(0)
 
@@ -99,7 +100,15 @@ export default function BoardPage() {
 
     const { data, error } = await query
 
-    if (!error && data) {
+    if (error) {
+      if (reset) setFetchError(true)
+      setLoading(false)
+      setLoadingMore(false)
+      return
+    }
+
+    setFetchError(false)
+    if (data) {
       const rawPosts = data as unknown as Post[]
       rawPosts.forEach(p => {
         p.view_count = (p.post_views as unknown as { count: number }[])?.[0]?.count ?? 0
@@ -139,6 +148,7 @@ export default function BoardPage() {
     setLoading(false)
     setLoadingMore(false)
   }, [category, searchQuery, sortKey, blockedIds])
+
 
   useEffect(() => {
     fetchPosts(true)
@@ -274,6 +284,22 @@ export default function BoardPage() {
         <div className="flex flex-col items-center justify-center py-16">
           <div className="w-8 h-8 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-3" />
           <p className="text-sm text-gray-400">불러오는 중...</p>
+        </div>
+      ) : fetchError ? (
+        <div className="flex flex-col items-center justify-center py-16">
+          <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4">
+            <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <p className="text-gray-500 font-medium mb-1">게시글을 불러오지 못했습니다</p>
+          <p className="text-sm text-gray-400 mb-4">네트워크 상태를 확인해주세요</p>
+          <button
+            onClick={() => fetchPosts(true)}
+            className="px-5 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700"
+          >
+            다시 시도
+          </button>
         </div>
       ) : posts.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16">

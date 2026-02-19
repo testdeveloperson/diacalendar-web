@@ -72,12 +72,16 @@ export default function PostDetailPage() {
   }
 
   const fetchPost = useCallback(async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('posts')
       .select('id,author_id,title,content,category,created_at,profiles(nickname),comments(count)')
       .eq('id', id)
       .single()
 
+    if (error && error.code !== 'PGRST116') {
+      // PGRST116 = 게시글 없음(정상적 404), 그 외는 네트워크/서버 오류
+      showSnackbar('게시글을 불러오지 못했습니다')
+    }
     if (data) setPost(data as unknown as Post)
     setLoading(false)
   }, [id])
@@ -124,12 +128,13 @@ export default function PostDetailPage() {
   }
 
   const fetchComments = useCallback(async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('comments')
       .select('*,profiles(nickname)')
       .eq('post_id', id)
       .order('created_at', { ascending: true })
 
+    if (error) { showSnackbar('댓글을 불러오지 못했습니다'); return }
     if (data) {
       const topLevel: Comment[] = []
       const replyMap = new Map<number, Comment[]>()
@@ -170,7 +175,9 @@ export default function PostDetailPage() {
       content: commentText.trim(),
     })
 
-    if (!error) {
+    if (error) {
+      showSnackbar('댓글 작성에 실패했습니다')
+    } else {
       setCommentText('')
       setReplyTarget(null)
       fetchComments()
