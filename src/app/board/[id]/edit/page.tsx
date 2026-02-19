@@ -11,9 +11,10 @@ import { colorActiveClass } from '@/lib/types'
 
 export default function PostEditPage() {
   const { id } = useParams<{ id: string }>()
-  const { user } = useAuth()
+  const { user, isAdmin } = useAuth()
   const router = useRouter()
   const { categories } = useCategories()
+  const availableCategories = categories.filter(cat => !cat.admin_only || isAdmin)
   const [category, setCategory] = useState<string>('')
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
@@ -91,7 +92,7 @@ export default function PostEditPage() {
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">카테고리</label>
           <div className="flex gap-2 flex-wrap">
-            {categories.map(cat => (
+            {availableCategories.map(cat => (
               <button
                 key={cat.id}
                 type="button"

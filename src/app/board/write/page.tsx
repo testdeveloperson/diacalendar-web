@@ -8,9 +8,10 @@ import { useCategories } from '@/hooks/useCategories'
 import { colorActiveClass } from '@/lib/types'
 
 export default function PostWritePage() {
-  const { user } = useAuth()
+  const { user, isAdmin } = useAuth()
   const router = useRouter()
   const { categories } = useCategories()
+  const availableCategories = categories.filter(cat => !cat.admin_only || isAdmin)
   const [category, setCategory] = useState<string>('')
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
@@ -19,10 +20,10 @@ export default function PostWritePage() {
 
   // categories가 로드되면 첫 번째 카테고리를 기본값으로 설정
   useEffect(() => {
-    if (categories.length > 0 && !category) {
-      setCategory(categories[0].id)
+    if (availableCategories.length > 0 && !category) {
+      setCategory(availableCategories[0].id)
     }
-  }, [categories, category])
+  }, [availableCategories, category])
 
   if (!user) {
     router.push('/auth/login')
@@ -65,7 +66,7 @@ export default function PostWritePage() {
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">카테고리</label>
           <div className="flex gap-2 flex-wrap">
-            {categories.map(cat => (
+            {availableCategories.map(cat => (
               <button
                 key={cat.id}
                 type="button"

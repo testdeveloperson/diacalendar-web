@@ -5,6 +5,7 @@ export interface Category {
   label: string
   color: string
   sort_order: number
+  admin_only: boolean
 }
 
 export function colorClass(color: string): string {
