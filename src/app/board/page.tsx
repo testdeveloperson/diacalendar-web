@@ -9,7 +9,7 @@ import CategoryFilter from '@/components/CategoryFilter'
 import PostCard from '@/components/PostCard'
 
 const PAGE_SIZE = 20
-const POST_SELECT = 'id,author_id,title,content,category,created_at,profiles(nickname),comments(count)'
+const POST_SELECT = 'id,author_id,title,content,category,created_at,profiles(nickname),comments(count),post_views(count),post_reactions(count)'
 
 export default function BoardPage() {
   const { user } = useAuth()
@@ -65,7 +65,12 @@ export default function BoardPage() {
     const { data, error } = await query
 
     if (!error && data) {
-      const filtered = (data as unknown as Post[]).filter(p => !blockedIds.has(p.author_id))
+      const rawPosts = data as unknown as Post[]
+      rawPosts.forEach(p => {
+        p.view_count = (p.post_views as unknown as { count: number }[])?.[0]?.count ?? 0
+        p.like_count = (p.post_reactions as unknown as { count: number }[])?.[0]?.count ?? 0
+      })
+      const filtered = rawPosts.filter(p => !blockedIds.has(p.author_id))
       if (reset) {
         setPosts(filtered)
       } else {

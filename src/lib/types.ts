@@ -15,6 +15,11 @@ export interface Post {
   created_at: string
   profiles: { nickname: string } | null
   comments: { count: number }[]
+  post_views?: { count: number }[]
+  post_reactions?: { count: number }[]
+  view_count?: number
+  like_count?: number
+  dislike_count?: number
 }
 
 export interface Comment {

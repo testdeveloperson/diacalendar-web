@@ -58,6 +58,12 @@ export default function PostDetailPage() {
 
   const [confirmAction, setConfirmAction] = useState<{ message: string; action: () => void } | null>(null)
 
+  const [viewCount, setViewCount] = useState(0)
+  const [likeCount, setLikeCount] = useState(0)
+  const [dislikeCount, setDislikeCount] = useState(0)
+  const [myReaction, setMyReaction] = useState<'LIKE' | 'DISLIKE' | null>(null)
+  const [reactionLoading, setReactionLoading] = useState(false)
+
   const showSnackbar = (msg: string) => {
     setSnackbar(msg)
     setTimeout(() => setSnackbar(null), 3000)
@@ -73,6 +79,47 @@ export default function PostDetailPage() {
     if (data) setPost(data as unknown as Post)
     setLoading(false)
   }, [id])
+
+  const recordView = useCallback(async () => {
+    if (!user) return
+    // 중복 시 unique 제약으로 자동 무시
+    await supabase.from('post_views').insert({ post_id: Number(id), user_id: user.id })
+  }, [id, user])
+
+  const fetchCounts = useCallback(async () => {
+    const [{ count: views }, { count: likes }, { count: dislikes }] = await Promise.all([
+      supabase.from('post_views').select('*', { count: 'exact', head: true }).eq('post_id', id),
+      supabase.from('post_reactions').select('*', { count: 'exact', head: true }).eq('post_id', id).eq('reaction', 'LIKE'),
+      supabase.from('post_reactions').select('*', { count: 'exact', head: true }).eq('post_id', id).eq('reaction', 'DISLIKE'),
+    ])
+    setViewCount(views ?? 0)
+    setLikeCount(likes ?? 0)
+    setDislikeCount(dislikes ?? 0)
+
+    if (user) {
+      const { data } = await supabase
+        .from('post_reactions')
+        .select('reaction')
+        .eq('post_id', id)
+        .eq('user_id', user.id)
+        .maybeSingle()
+      setMyReaction((data?.reaction as 'LIKE' | 'DISLIKE') ?? null)
+    }
+  }, [id, user])
+
+  const handleReaction = async (type: 'LIKE' | 'DISLIKE') => {
+    if (!user) { showSnackbar('로그인이 필요합니다'); return }
+    setReactionLoading(true)
+    if (myReaction === type) {
+      await supabase.from('post_reactions').delete().eq('post_id', id).eq('user_id', user.id)
+      setMyReaction(null)
+    } else {
+      await supabase.from('post_reactions').upsert({ post_id: Number(id), user_id: user.id, reaction: type })
+      setMyReaction(type)
+    }
+    await fetchCounts()
+    setReactionLoading(false)
+  }
 
   const fetchComments = useCallback(async () => {
     const { data } = await supabase
@@ -106,7 +153,9 @@ export default function PostDetailPage() {
   useEffect(() => {
     fetchPost()
     fetchComments()
-  }, [fetchPost, fetchComments])
+    fetchCounts()
+    recordView()
+  }, [fetchPost, fetchComments, fetchCounts, recordView])
 
   const handleSendComment = async () => {
     if (!user || !commentText.trim()) return
@@ -347,14 +396,62 @@ export default function PostDetailPage() {
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-white flex items-center justify-center text-sm font-bold">
             {(post.profiles?.nickname ?? '?')[0]}
           </div>
-          <div>
+          <div className="flex-1">
             <p className="text-sm font-semibold text-gray-900">{post.profiles?.nickname ?? '알 수 없음'}</p>
-            <p className="text-xs text-gray-400">{formatRelativeTime(post.created_at)}</p>
+            <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
+              <span>{formatRelativeTime(post.created_at)}</span>
+              {viewCount > 0 && (
+                <>
+                  <span className="text-gray-200">·</span>
+                  <span className="flex items-center gap-0.5">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    조회 {viewCount}
+                  </span>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="text-gray-700 whitespace-pre-wrap leading-relaxed text-[15px]">
+        <div className="text-gray-700 whitespace-pre-wrap leading-relaxed text-[15px] mb-6">
           <LinkableText text={post.content} />
+        </div>
+
+        {/* 좋아요 / 싫어요 */}
+        <div className="flex items-center gap-3 pt-4 border-t border-gray-100">
+          <button
+            onClick={() => handleReaction('LIKE')}
+            disabled={reactionLoading}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              myReaction === 'LIKE'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-600'
+            } disabled:opacity-60`}
+          >
+            <svg className="w-4 h-4" fill={myReaction === 'LIKE' ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={myReaction === 'LIKE' ? 0 : 2} viewBox="0 0 24 24">
+              <path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z" />
+              <path d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3" />
+            </svg>
+            좋아요 {likeCount > 0 && <span>{likeCount}</span>}
+          </button>
+          <button
+            onClick={() => handleReaction('DISLIKE')}
+            disabled={reactionLoading}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              myReaction === 'DISLIKE'
+                ? 'bg-red-500 text-white shadow-sm'
+                : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-500'
+            } disabled:opacity-60`}
+          >
+            <svg className="w-4 h-4" fill={myReaction === 'DISLIKE' ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={myReaction === 'DISLIKE' ? 0 : 2} viewBox="0 0 24 24">
+              <path d="M10 15v4a3 3 0 003 3l4-9V2H5.72a2 2 0 00-2 1.7l-1.38 9a2 2 0 002 2.3H10z" />
+              <path d="M17 2h2.67A2.31 2.31 0 0122 4v7a2.31 2.31 0 01-2.33 2H17" />
+            </svg>
+            싫어요 {dislikeCount > 0 && <span>{dislikeCount}</span>}
+          </button>
         </div>
       </div>
 

@@ -8,6 +8,7 @@ interface AuthContextType {
   user: User | null
   session: Session | null
   nickname: string | null
+  isAdmin: boolean
   isLoading: boolean
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
   signUp: (email: string, password: string) => Promise<{ error: string | null }>
@@ -25,15 +26,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [nickname, setNickname] = useState<string | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
   const fetchNickname = async (userId: string) => {
     const { data } = await supabase
       .from('profiles')
-      .select('nickname')
+      .select('nickname, is_admin')
       .eq('id', userId)
       .single()
     setNickname(data?.nickname ?? null)
+    setIsAdmin(data?.is_admin ?? false)
   }
 
   useEffect(() => {
@@ -53,6 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         fetchNickname(session.user.id)
       } else {
         setNickname(null)
+        setIsAdmin(false)
       }
     })
 
@@ -125,6 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut()
     setNickname(null)
+    setIsAdmin(false)
   }
 
   const recoverPassword = async (email: string) => {
@@ -158,7 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, nickname, isLoading, signIn, signUp, verifyOtp, setNicknameForUser, signOut, recoverPassword, verifyRecoveryOtp, updatePassword }}>
+    <AuthContext.Provider value={{ user, session, nickname, isAdmin, isLoading, signIn, signUp, verifyOtp, setNicknameForUser, signOut, recoverPassword, verifyRecoveryOtp, updatePassword }}>
       {children}
     </AuthContext.Provider>
   )
