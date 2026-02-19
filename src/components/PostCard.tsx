@@ -14,7 +14,7 @@ export default function PostCard({ post, isNew }: PostCardProps) {
   const { getCategoryLabel, getCategoryColor } = useCategories()
 
   return (
-    <Link href={`/board/${post.id}`} className="block group">
+    <Link href={`/board/${post.id}`} prefetch={false} className="block group">
       <div className="bg-white rounded-xl border border-gray-200/80 p-4 sm:p-5 hover:shadow-md hover:border-gray-300/80 transition-all duration-200">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
