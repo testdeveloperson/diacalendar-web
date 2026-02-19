@@ -10,8 +10,10 @@ interface AdminReport {
   content_id: number
   reason: string
   created_at: string
-  reporter: { nickname: string } | null
-  target: { nickname: string } | null
+  reporter_id: string
+  target_author_id: string
+  reporter_nickname?: string
+  target_nickname?: string
 }
 
 const REASON_MAP: Record<string, string> = {
@@ -36,14 +38,35 @@ export default function AdminReportsPage() {
     setLoading(true)
     let query = supabase
       .from('reports')
-      .select('id,content_type,content_id,reason,created_at,reporter:profiles!reporter_id(nickname),target:profiles!target_author_id(nickname)')
+      .select('id,content_type,content_id,reason,created_at,reporter_id,target_author_id')
       .order('created_at', { ascending: false })
       .limit(200)
 
     if (typeFilter) query = query.eq('content_type', typeFilter)
 
     const { data } = await query
-    setReports((data as unknown as AdminReport[]) ?? [])
+    if (!data) { setLoading(false); return }
+
+    const rawReports = data as AdminReport[]
+
+    // reporter_id, target_author_id 목록으로 profiles 일괄 조회
+    const userIds = [...new Set([
+      ...rawReports.map(r => r.reporter_id),
+      ...rawReports.map(r => r.target_author_id),
+    ])]
+
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id,nickname')
+      .in('id', userIds)
+
+    const nicknameMap = new Map((profiles ?? []).map(p => [p.id, p.nickname]))
+
+    setReports(rawReports.map(r => ({
+      ...r,
+      reporter_nickname: nicknameMap.get(r.reporter_id) ?? '알 수 없음',
+      target_nickname: nicknameMap.get(r.target_author_id) ?? '알 수 없음',
+    })))
     setLoading(false)
   }, [typeFilter])
 
@@ -148,9 +171,9 @@ export default function AdminReportsPage() {
                   </span>
                 </div>
                 <div className="text-sm text-gray-700 min-w-0">
-                  <span className="font-medium">{report.reporter?.nickname ?? '?'}</span>
+                  <span className="font-medium">{report.reporter_nickname ?? '?'}</span>
                   <span className="text-gray-400 mx-1">→</span>
-                  <span className="text-red-600 font-medium">{report.target?.nickname ?? '?'}</span>
+                  <span className="text-red-600 font-medium">{report.target_nickname ?? '?'}</span>
                   <span className="text-xs text-gray-400 ml-2">#{report.content_id}</span>
                 </div>
                 <span className="px-3 text-xs text-gray-500 whitespace-nowrap">{REASON_MAP[report.reason] ?? report.reason}</span>
