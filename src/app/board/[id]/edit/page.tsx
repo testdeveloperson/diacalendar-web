@@ -6,13 +6,15 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
-import { BoardCategory } from '@/lib/types'
+import { useCategories } from '@/hooks/useCategories'
+import { colorActiveClass } from '@/lib/types'
 
 export default function PostEditPage() {
   const { id } = useParams<{ id: string }>()
   const { user } = useAuth()
   const router = useRouter()
-  const [category, setCategory] = useState<BoardCategory>('FREE')
+  const { categories } = useCategories()
+  const [category, setCategory] = useState<string>('')
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(false)
@@ -32,7 +34,7 @@ export default function PostEditPage() {
           router.push('/board')
           return
         }
-        setCategory(data.category as BoardCategory)
+        setCategory(data.category)
         setTitle(data.title)
         setContent(data.content)
       }
@@ -88,29 +90,21 @@ export default function PostEditPage() {
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">카테고리</label>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setCategory('FREE')}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                category === 'FREE'
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              자유게시판
-            </button>
-            <button
-              type="button"
-              onClick={() => setCategory('QA')}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                category === 'QA'
-                  ? 'bg-violet-600 text-white shadow-sm'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              Q&A
-            </button>
+          <div className="flex gap-2 flex-wrap">
+            {categories.map(cat => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setCategory(cat.id)}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  category === cat.id
+                    ? colorActiveClass(cat.color)
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
           </div>
         </div>
 

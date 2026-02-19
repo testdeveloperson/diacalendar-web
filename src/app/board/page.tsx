@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
-import { Post, BoardCategory } from '@/lib/types'
+import { Post } from '@/lib/types'
 import CategoryFilter from '@/components/CategoryFilter'
 import PostCard from '@/components/PostCard'
 
@@ -15,7 +15,7 @@ const LAST_VISITED_KEY = 'board_last_visited_at'
 export default function BoardPage() {
   const { user } = useAuth()
   const [posts, setPosts] = useState<Post[]>([])
-  const [category, setCategory] = useState<BoardCategory | null>(null)
+  const [category, setCategory] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [isSearchMode, setIsSearchMode] = useState(false)
   const [loading, setLoading] = useState(true)

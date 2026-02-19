@@ -2,13 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-
-interface Category {
-  id: string
-  label: string
-  color: string
-  sort_order: number
-}
+import { Category, colorClass } from '@/lib/types'
 
 const COLOR_OPTIONS = [
   { value: 'emerald', label: '초록', cls: 'bg-emerald-50 text-emerald-600' },
@@ -18,10 +12,6 @@ const COLOR_OPTIONS = [
   { value: 'amber', label: '주황', cls: 'bg-amber-50 text-amber-600' },
   { value: 'gray', label: '회색', cls: 'bg-gray-100 text-gray-600' },
 ]
-
-function colorClass(color: string) {
-  return COLOR_OPTIONS.find(c => c.value === color)?.cls ?? 'bg-gray-100 text-gray-600'
-}
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([])
@@ -237,14 +227,6 @@ export default function AdminCategoriesPage() {
         )}
       </div>
 
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-700">
-        <p className="font-semibold mb-1">카테고리 추가 후 게시판에 반영하려면</p>
-        <p className="text-xs leading-relaxed">
-          카테고리 ID를 <code className="bg-amber-100 px-1 rounded">BoardCategory</code> 타입 및
-          <code className="bg-amber-100 px-1 rounded">BOARD_CATEGORIES</code> 배열에 추가하고,
-          CategoryFilter 컴포넌트에도 반영해야 게시글 작성/필터에서 선택 가능합니다.
-        </p>
-      </div>
     </div>
   )
 }

@@ -1,10 +1,35 @@
-export type BoardCategory = 'FREE' | 'QA'
+export type BoardCategory = string
 
-export const BOARD_CATEGORIES: { value: BoardCategory | null; label: string }[] = [
-  { value: null, label: '전체' },
-  { value: 'FREE', label: '자유게시판' },
-  { value: 'QA', label: 'Q&A' },
-]
+export interface Category {
+  id: string
+  label: string
+  color: string
+  sort_order: number
+}
+
+export function colorClass(color: string): string {
+  const map: Record<string, string> = {
+    emerald: 'bg-emerald-50 text-emerald-600',
+    violet:  'bg-violet-50 text-violet-600',
+    blue:    'bg-blue-50 text-blue-600',
+    rose:    'bg-rose-50 text-rose-600',
+    amber:   'bg-amber-50 text-amber-600',
+    gray:    'bg-gray-100 text-gray-600',
+  }
+  return map[color] ?? 'bg-gray-100 text-gray-600'
+}
+
+export function colorActiveClass(color: string): string {
+  const map: Record<string, string> = {
+    emerald: 'bg-emerald-600 text-white',
+    violet:  'bg-violet-600 text-white',
+    blue:    'bg-blue-600 text-white',
+    rose:    'bg-rose-600 text-white',
+    amber:   'bg-amber-600 text-white',
+    gray:    'bg-gray-600 text-white',
+  }
+  return map[color] ?? 'bg-gray-600 text-white'
+}
 
 export interface Post {
   id: number
@@ -53,10 +78,6 @@ export interface BlockedUser {
 
 export function getCommentCount(post: Post): number {
   return post.comments?.[0]?.count ?? 0
-}
-
-export function getCategoryLabel(category: BoardCategory): string {
-  return category === 'FREE' ? '자유게시판' : 'Q&A'
 }
 
 export function formatRelativeTime(dateStr: string): string {

@@ -5,10 +5,12 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
-import { Post, getCategoryLabel, getCommentCount, formatRelativeTime } from '@/lib/types'
+import { Post, getCommentCount, formatRelativeTime, colorClass } from '@/lib/types'
+import { useCategories } from '@/hooks/useCategories'
 
 export default function MyPostsPage() {
   const { user } = useAuth()
+  const { getCategoryLabel, getCategoryColor } = useCategories()
   const router = useRouter()
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
@@ -87,11 +89,7 @@ export default function MyPostsPage() {
             <div key={post.id} className="bg-white rounded-xl border border-gray-200/80 p-4 sm:p-5 hover:shadow-sm transition-shadow">
               <Link href={`/board/${post.id}`}>
                 <div className="flex items-center gap-2 mb-2">
-                  <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
-                    post.category === 'FREE'
-                      ? 'bg-emerald-50 text-emerald-600'
-                      : 'bg-violet-50 text-violet-600'
-                  }`}>
+                  <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${colorClass(getCategoryColor(post.category))}`}>
                     {getCategoryLabel(post.category)}
                   </span>
                 </div>

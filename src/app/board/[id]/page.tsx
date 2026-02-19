@@ -7,7 +7,8 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
-import { Post, Comment, ReportReason, getCategoryLabel, formatRelativeTime } from '@/lib/types'
+import { Post, Comment, ReportReason, formatRelativeTime, colorClass } from '@/lib/types'
+import { useCategories } from '@/hooks/useCategories'
 import CommentItem from '@/components/CommentItem'
 import CommentInput from '@/components/CommentInput'
 import ReportDialog from '@/components/ReportDialog'
@@ -42,6 +43,7 @@ function LinkableText({ text }: { text: string }) {
 export default function PostDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { user } = useAuth()
+  const { getCategoryLabel, getCategoryColor } = useCategories()
   const router = useRouter()
 
   const [post, setPost] = useState<Post | null>(null)
@@ -311,11 +313,7 @@ export default function PostDetailPage() {
       {/* Post */}
       <div className="bg-white rounded-2xl border border-gray-200/80 p-5 sm:p-7 mb-4">
         <div className="flex items-center justify-between mb-4">
-          <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
-            post.category === 'FREE'
-              ? 'bg-emerald-50 text-emerald-600'
-              : 'bg-violet-50 text-violet-600'
-          }`}>
+          <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${colorClass(getCategoryColor(post.category))}`}>
             {getCategoryLabel(post.category)}
           </span>
 

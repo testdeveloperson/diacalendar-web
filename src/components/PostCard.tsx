@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { Post, getCategoryLabel, getCommentCount, formatRelativeTime } from '@/lib/types'
+import { Post, getCommentCount, formatRelativeTime, colorClass } from '@/lib/types'
+import { useCategories } from '@/hooks/useCategories'
 
 interface PostCardProps {
   post: Post
@@ -10,6 +11,7 @@ interface PostCardProps {
 
 export default function PostCard({ post, isNew }: PostCardProps) {
   const commentCount = getCommentCount(post)
+  const { getCategoryLabel, getCategoryColor } = useCategories()
 
   return (
     <Link href={`/board/${post.id}`} className="block group">
@@ -17,11 +19,7 @@ export default function PostCard({ post, isNew }: PostCardProps) {
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
-              <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
-                post.category === 'FREE'
-                  ? 'bg-emerald-50 text-emerald-600'
-                  : 'bg-violet-50 text-violet-600'
-              }`}>
+              <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${colorClass(getCategoryColor(post.category))}`}>
                 {getCategoryLabel(post.category)}
               </span>
               {isNew && (

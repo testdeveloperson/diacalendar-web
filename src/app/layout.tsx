@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/hooks/useAuth";
+import { CategoriesProvider } from "@/hooks/useCategories";
 import Header from "@/components/Header";
 
 export const metadata: Metadata = {
@@ -17,10 +18,12 @@ export default function RootLayout({
     <html lang="ko">
       <body className="antialiased min-h-screen">
         <AuthProvider>
-          <Header />
-          <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            {children}
-          </main>
+          <CategoriesProvider>
+            <Header />
+            <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+              {children}
+            </main>
+          </CategoriesProvider>
         </AuthProvider>
       </body>
     </html>

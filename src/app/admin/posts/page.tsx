@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { getCategoryLabel, formatRelativeTime } from '@/lib/types'
+import { formatRelativeTime, colorClass } from '@/lib/types'
+import { useCategories } from '@/hooks/useCategories'
 
 interface AdminPost {
   id: number
@@ -14,6 +15,7 @@ interface AdminPost {
 }
 
 export default function AdminPostsPage() {
+  const { categories, getCategoryLabel, getCategoryColor } = useCategories()
   const [posts, setPosts] = useState<AdminPost[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -103,8 +105,9 @@ export default function AdminPostsPage() {
           className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">전체</option>
-          <option value="FREE">자유게시판</option>
-          <option value="QA">Q&A</option>
+          {categories.map(cat => (
+            <option key={cat.id} value={cat.id}>{cat.label}</option>
+          ))}
         </select>
         <button onClick={fetchPosts} className="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700">
           검색
@@ -138,12 +141,11 @@ export default function AdminPostsPage() {
                   <select
                     value={post.category}
                     onChange={e => handleCategoryChange(post.id, e.target.value)}
-                    className={`text-xs px-2 py-1 rounded-full font-semibold border-0 cursor-pointer focus:outline-none ${
-                      post.category === 'FREE' ? 'bg-emerald-50 text-emerald-600' : 'bg-violet-50 text-violet-600'
-                    }`}
+                    className={`text-xs px-2 py-1 rounded-full font-semibold border-0 cursor-pointer focus:outline-none ${colorClass(getCategoryColor(post.category))}`}
                   >
-                    <option value="FREE">자유게시판</option>
-                    <option value="QA">Q&A</option>
+                    {categories.map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.label}</option>
+                    ))}
                   </select>
                 </div>
                 <span className="px-3 text-xs text-gray-500 whitespace-nowrap">{post.profiles?.nickname ?? '알 수 없음'}</span>
