@@ -9,8 +9,17 @@ import CategoryFilter from '@/components/CategoryFilter'
 import PostCard from '@/components/PostCard'
 
 const PAGE_SIZE = 20
-const POST_SELECT = 'id,author_id,title,content,category,created_at,profiles(nickname),comments(count),post_views(count),post_reactions(count)'
+const POST_SELECT = 'id,author_id,title,content,category,created_at,profiles(nickname),comments(count),post_views(count),post_reactions(reaction)'
 const LAST_VISITED_KEY = 'board_last_visited_at'
+
+type SortKey = 'latest' | 'views' | 'likes' | 'dislikes'
+
+const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+  { key: 'latest', label: '최신순' },
+  { key: 'views', label: '조회순' },
+  { key: 'likes', label: '좋아요순' },
+  { key: 'dislikes', label: '싫어요순' },
+]
 
 export default function BoardPage() {
   const { user } = useAuth()
@@ -18,6 +27,7 @@ export default function BoardPage() {
   const [category, setCategory] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [isSearchMode, setIsSearchMode] = useState(false)
+  const [sortKey, setSortKey] = useState<SortKey>('latest')
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
@@ -67,11 +77,17 @@ export default function BoardPage() {
       setLoadingMore(true)
     }
 
+    // 조회수/좋아요/싫어요 정렬은 클라이언트 정렬이 필요하므로 전체 로드
+    const isClientSort = sortKey !== 'latest'
+    const rangeEnd = isClientSort
+      ? offsetRef.current + PAGE_SIZE * 5 - 1  // 더 많이 가져와서 클라이언트 정렬
+      : offsetRef.current + PAGE_SIZE - 1
+
     let query = supabase
       .from('posts')
       .select(POST_SELECT)
       .order('created_at', { ascending: false })
-      .range(offsetRef.current, offsetRef.current + PAGE_SIZE - 1)
+      .range(offsetRef.current, rangeEnd)
 
     if (category) {
       query = query.eq('category', category)
@@ -87,13 +103,25 @@ export default function BoardPage() {
       const rawPosts = data as unknown as Post[]
       rawPosts.forEach(p => {
         p.view_count = (p.post_views as unknown as { count: number }[])?.[0]?.count ?? 0
-        p.like_count = (p.post_reactions as unknown as { count: number }[])?.[0]?.count ?? 0
+        const reactions = p.post_reactions as unknown as { reaction: string }[]
+        p.like_count = reactions?.filter(r => r.reaction === 'LIKE').length ?? 0
+        p.dislike_count = reactions?.filter(r => r.reaction === 'DISLIKE').length ?? 0
       })
+
+      // 클라이언트 정렬
+      if (sortKey === 'views') {
+        rawPosts.sort((a, b) => (b.view_count ?? 0) - (a.view_count ?? 0))
+      } else if (sortKey === 'likes') {
+        rawPosts.sort((a, b) => (b.like_count ?? 0) - (a.like_count ?? 0))
+      } else if (sortKey === 'dislikes') {
+        rawPosts.sort((a, b) => (b.dislike_count ?? 0) - (a.dislike_count ?? 0))
+      }
+
       const filtered = rawPosts.filter(p => !blockedIds.has(p.author_id))
       if (reset) {
         setPosts(filtered)
-        // 마지막 방문 이후 새 글 카운트 (카테고리/검색 필터 없을 때만)
-        if (!category && !searchQuery.trim() && lastVisitedRef.current) {
+        // 마지막 방문 이후 새 글 카운트 (카테고리/검색/정렬 필터 없을 때만)
+        if (!category && !searchQuery.trim() && sortKey === 'latest' && lastVisitedRef.current) {
           const newCount = filtered.filter(
             p => new Date(p.created_at) > new Date(lastVisitedRef.current!)
           ).length
@@ -104,13 +132,13 @@ export default function BoardPage() {
       } else {
         setPosts(prev => [...prev, ...filtered])
       }
-      setHasMore(data.length === PAGE_SIZE)
+      setHasMore(data.length === (isClientSort ? PAGE_SIZE * 5 : PAGE_SIZE))
       offsetRef.current += data.length
     }
 
     setLoading(false)
     setLoadingMore(false)
-  }, [category, searchQuery, blockedIds])
+  }, [category, searchQuery, sortKey, blockedIds])
 
   useEffect(() => {
     fetchPosts(true)
@@ -163,7 +191,7 @@ export default function BoardPage() {
       )}
 
       {/* Category filter + Search */}
-      <div className="flex items-center justify-between gap-3 mb-5">
+      <div className="flex items-center justify-between gap-3 mb-3">
         <CategoryFilter selected={category} onChange={setCategory} />
         <button
           onClick={() => setIsSearchMode(!isSearchMode)}
@@ -176,6 +204,23 @@ export default function BoardPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </button>
+      </div>
+
+      {/* Sort options */}
+      <div className="flex items-center gap-1.5 mb-4 overflow-x-auto">
+        {SORT_OPTIONS.map(opt => (
+          <button
+            key={opt.key}
+            onClick={() => setSortKey(opt.key)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex-shrink-0 transition-colors ${
+              sortKey === opt.key
+                ? 'bg-gray-900 text-white'
+                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
       </div>
 
       {/* Search bar */}
