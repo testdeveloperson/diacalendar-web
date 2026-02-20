@@ -3,8 +3,6 @@
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 
-export const runtime = 'edge'
-
 const features = [
   {
     icon: (
