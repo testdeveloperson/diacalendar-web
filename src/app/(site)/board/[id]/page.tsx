@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { Post, Comment, ReportReason, formatRelativeTime, colorClass } from '@/lib/types'
@@ -63,6 +64,7 @@ export default function PostDetailPage() {
   const [dislikeCount, setDislikeCount] = useState(0)
   const [myReaction, setMyReaction] = useState<'LIKE' | 'DISLIKE' | null>(null)
   const [reactionLoading, setReactionLoading] = useState(false)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
 
   const showSnackbar = (msg: string) => {
     setSnackbar(msg)
@@ -72,7 +74,7 @@ export default function PostDetailPage() {
   const fetchPost = useCallback(async () => {
     const { data, error } = await supabase
       .from('posts')
-      .select('id,author_id,title,content,category,created_at,profiles(nickname),comments(count)')
+      .select('id,author_id,title,content,category,created_at,image_urls,profiles(nickname),comments(count)')
       .eq('id', id)
       .single()
 
@@ -283,6 +285,33 @@ export default function PostDetailPage() {
         </div>
       )}
 
+      {/* Lightbox */}
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 animate-fadeIn"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <button
+            className="absolute top-4 right-4 text-white/70 hover:text-white"
+            onClick={() => setLightboxUrl(null)}
+            aria-label="닫기"
+          >
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <div className="relative max-w-3xl max-h-[90vh] w-full h-full" onClick={e => e.stopPropagation()}>
+            <Image
+              src={lightboxUrl}
+              alt="원본 이미지"
+              fill
+              className="object-contain"
+              sizes="(max-width: 768px) 100vw, 768px"
+            />
+          </div>
+        </div>
+      )}
+
       {/* Confirm dialog */}
       {confirmAction && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
@@ -422,6 +451,28 @@ export default function PostDetailPage() {
         <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed text-[15px] mb-6">
           <LinkableText text={post.content} />
         </div>
+
+        {/* 이미지 갤러리 */}
+        {post.image_urls && post.image_urls.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-6">
+            {post.image_urls.map((url, i) => (
+              <button
+                key={url}
+                type="button"
+                onClick={() => setLightboxUrl(url)}
+                className="relative w-28 h-28 sm:w-36 sm:h-36 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 hover:opacity-90 transition-opacity"
+              >
+                <Image
+                  src={url}
+                  alt={`이미지 ${i + 1}`}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 640px) 112px, 144px"
+                />
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* 좋아요 / 싫어요 */}
         <div className="flex items-center gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">

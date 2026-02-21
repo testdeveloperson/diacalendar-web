@@ -39,6 +39,7 @@ export interface Post {
   content: string
   category: BoardCategory
   created_at: string
+  image_urls?: string[]
   profiles: { nickname: string } | null
   comments: { count: number }[]
   post_views?: { count: number }[]

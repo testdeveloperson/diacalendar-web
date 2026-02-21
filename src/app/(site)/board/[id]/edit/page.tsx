@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { useCategories } from '@/hooks/useCategories'
 import { colorActiveClass } from '@/lib/types'
+import ImageUploader from '@/components/ImageUploader'
 
 export default function PostEditPage() {
   const { id } = useParams<{ id: string }>()
@@ -16,6 +17,7 @@ export default function PostEditPage() {
   const [category, setCategory] = useState<string>('')
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
+  const [imageUrls, setImageUrls] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -24,7 +26,7 @@ export default function PostEditPage() {
     const fetchPost = async () => {
       const { data } = await supabase
         .from('posts')
-        .select('category,title,content,author_id')
+        .select('category,title,content,author_id,image_urls')
         .eq('id', id)
         .single()
 
@@ -36,6 +38,7 @@ export default function PostEditPage() {
         setCategory(data.category)
         setTitle(data.title)
         setContent(data.content)
+        setImageUrls((data.image_urls as string[]) ?? [])
       }
       setFetching(false)
     }
@@ -71,6 +74,7 @@ export default function PostEditPage() {
         category,
         title: title.trim(),
         content: content.trim(),
+        image_urls: imageUrls,
       })
       .eq('id', id)
 
@@ -128,6 +132,8 @@ export default function PostEditPage() {
             className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-700 text-sm text-gray-900 dark:text-gray-100 resize-none leading-relaxed placeholder-gray-400"
           />
         </div>
+
+        <ImageUploader images={imageUrls} onChange={setImageUrls} />
 
         {error && (
           <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 px-4 py-3 rounded-xl">
