@@ -76,6 +76,18 @@ export default function PostCard({ post, isNew }: PostCardProps) {
               </span>
             </>
           )}
+          {(post.dislike_count ?? 0) > 0 && (
+            <>
+              <span className="text-gray-300">·</span>
+              <span className="flex items-center gap-0.5">
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M10 15v4a3 3 0 003 3l4-9V2H5.72a2 2 0 00-2 1.7l-1.38 9a2 2 0 002 2.3H10z" />
+                  <path d="M17 2h2.67A2.31 2.31 0 0122 4v7a2.31 2.31 0 01-2.33 2H17" />
+                </svg>
+                {post.dislike_count}
+              </span>
+            </>
+          )}
         </div>
       </div>
     </Link>
