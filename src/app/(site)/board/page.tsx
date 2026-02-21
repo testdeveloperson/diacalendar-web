@@ -22,7 +22,7 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
 ]
 
 export default function BoardPage() {
-  const { user } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
   const [posts, setPosts] = useState<Post[]>([])
   const [category, setCategory] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -159,6 +159,35 @@ export default function BoardPage() {
     fetchPosts(true)
   }
 
+  if (authLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24">
+        <div className="w-8 h-8 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-3" />
+        <p className="text-sm text-gray-400">불러오는 중...</p>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <div className="w-16 h-16 bg-blue-50 dark:bg-blue-950/30 rounded-full flex items-center justify-center mb-5">
+          <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        </div>
+        <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-1">로그인이 필요합니다</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">커뮤니티는 가입이 필수입니다.</p>
+        <Link
+          href="/auth/login"
+          className="px-6 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 shadow-sm"
+        >
+          로그인하기
+        </Link>
+      </div>
+    )
+  }
+
   return (
     <div>
       {/* Guidelines dialog */}
@@ -258,25 +287,6 @@ export default function BoardPage() {
             </button>
           </div>
         </form>
-      )}
-
-      {/* Login banner */}
-      {!user && (
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl p-4 sm:p-5 mb-5 border border-blue-100/50 dark:border-blue-900/50">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">글쓰기와 댓글을 작성하려면 로그인이 필요합니다</p>
-              <Link href="/auth/login" className="text-sm font-semibold text-blue-600 hover:text-blue-700">
-                로그인하기 &rarr;
-              </Link>
-            </div>
-          </div>
-        </div>
       )}
 
       {/* Post list */}

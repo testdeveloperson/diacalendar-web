@@ -102,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error: '이미 가입된 이메일입니다' }
       }
       if (error.message.includes('Password should be at least')) {
-        return { error: '비밀번호는 6자 이상이어야 합니다' }
+        return { error: '비밀번호는 8자 이상이어야 합니다' }
       }
       return { error: error.message }
     }

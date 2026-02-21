@@ -75,7 +75,7 @@ export default function LoginPage() {
               onChange={e => setPassword(e.target.value)}
               required
               className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-700 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
-              placeholder="6자 이상"
+              placeholder="8자 이상"
             />
           </div>
 
