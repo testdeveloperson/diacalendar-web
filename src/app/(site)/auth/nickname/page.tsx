@@ -24,7 +24,7 @@ export default function NicknamePage() {
   }, [isLoading, user, existingNickname, router])
 
   const checkDuplicate = useCallback(async (value: string) => {
-    if (!user || value.trim().length < 2) {
+    if (!user || !/^[가-힣]{1,5}$/.test(value.trim())) {
       setIsDuplicate(null)
       return
     }
@@ -42,7 +42,7 @@ export default function NicknamePage() {
   }, [user])
 
   useEffect(() => {
-    if (nickname.trim().length < 2) {
+    if (!/^[가-힣]{1,5}$/.test(nickname.trim())) {
       setIsDuplicate(null)
       return
     }
@@ -54,13 +54,15 @@ export default function NicknamePage() {
     return () => clearTimeout(timer)
   }, [nickname, checkDuplicate])
 
+  const isValidNickname = (value: string) => /^[가-힣]{1,5}$/.test(value)
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
 
     const trimmed = nickname.trim()
-    if (trimmed.length < 2) {
-      setError('닉네임은 2자 이상이어야 합니다')
+    if (!isValidNickname(trimmed)) {
+      setError('닉네임은 한글 1~5자로 입력해주세요')
       return
     }
 
@@ -108,11 +110,13 @@ export default function NicknamePage() {
               value={nickname}
               onChange={e => setNickname(e.target.value)}
               required
+              maxLength={5}
               className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white text-sm placeholder-gray-400"
-              placeholder="2자 이상"
+              placeholder="한글 1~5자"
             />
-            {nickname.trim().length >= 2 && (
-              <p className={`mt-1.5 text-xs ${checking ? 'text-gray-400' : isDuplicate ? 'text-red-500' : 'text-green-500'}`}>
+            <p className="mt-1.5 text-xs text-gray-400">한글만 사용 가능, 최대 5자</p>
+            {/^[가-힣]{1,5}$/.test(nickname.trim()) && (
+              <p className={`mt-1 text-xs ${checking ? 'text-gray-400' : isDuplicate ? 'text-red-500' : 'text-green-500'}`}>
                 {checking ? '확인 중...' : isDuplicate ? '이미 사용 중인 닉네임입니다' : '사용 가능한 닉네임입니다'}
               </p>
             )}
@@ -129,7 +133,7 @@ export default function NicknamePage() {
 
           <button
             type="submit"
-            disabled={submitting || checking || isDuplicate === true || nickname.trim().length < 2}
+            disabled={submitting || checking || isDuplicate === true || !/^[가-힣]{1,5}$/.test(nickname.trim())}
             className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-50 shadow-sm"
           >
             {submitting ? '설정 중...' : '닉네임 설정'}
