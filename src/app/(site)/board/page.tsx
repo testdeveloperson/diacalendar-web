@@ -9,7 +9,7 @@ import CategoryFilter from '@/components/CategoryFilter'
 import PostCard from '@/components/PostCard'
 
 const PAGE_SIZE = 20
-const POST_SELECT = 'id,author_id,title,content,category,created_at,profiles(nickname),comments(count),post_views(count),post_reactions(reaction)'
+const POST_SELECT = 'id,author_id,title,content,category,created_at,image_urls,profiles(nickname),comments(count),post_views(count),post_reactions(reaction)'
 const LAST_VISITED_KEY = 'board_last_visited_at'
 
 type SortKey = 'latest' | 'views' | 'likes' | 'dislikes'
