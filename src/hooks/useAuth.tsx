@@ -15,6 +15,7 @@ interface AuthContextType {
   verifyOtp: (email: string, token: string) => Promise<{ error: string | null }>
   setNicknameForUser: (nickname: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
+  withdrawUser: () => Promise<{ error: string | null }>
   recoverPassword: (email: string) => Promise<{ error: string | null }>
   verifyRecoveryOtp: (email: string, token: string) => Promise<{ error: string | null }>
   updatePassword: (password: string) => Promise<{ error: string | null }>
@@ -64,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error, data } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
       if (error.message.includes('Invalid login credentials')) {
         return { error: '이메일 또는 비밀번호가 올바르지 않습니다' }
@@ -74,6 +75,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       return { error: error.message }
     }
+
+    // 탈퇴 처리된 계정 차단
+    if (data.user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('deleted_at')
+        .eq('id', data.user.id)
+        .single()
+      if (profile?.deleted_at) {
+        await supabase.auth.signOut()
+        return { error: '탈퇴한 계정입니다' }
+      }
+    }
+
     return { error: null }
   }
 
@@ -139,6 +154,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAdmin(false)
   }
 
+  const withdrawUser = async () => {
+    if (!user) return { error: '로그인이 필요합니다' }
+
+    // 이메일을 해시화하여 블랙리스트용으로 보존 (재가입 방지용)
+    const encoder = new TextEncoder()
+    const emailBytes = encoder.encode(user.email?.toLowerCase() ?? '')
+    const hashBuffer = await crypto.subtle.digest('SHA-256', emailBytes)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    const emailHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+
+    const { error } = await supabase.from('profiles').update({
+      deleted_at: new Date().toISOString(),
+      nickname: '탈퇴한사용자',
+      withdrawn_email_hash: emailHash,
+    }).eq('id', user.id)
+
+    if (error) return { error: error.message }
+
+    await supabase.auth.signOut()
+    setNickname(null)
+    setIsAdmin(false)
+    return { error: null }
+  }
+
   const recoverPassword = async (email: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email)
     if (error) return { error: error.message }
@@ -170,7 +209,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, nickname, isAdmin, isLoading, signIn, signUp, verifyOtp, setNicknameForUser, signOut, recoverPassword, verifyRecoveryOtp, updatePassword }}>
+    <AuthContext.Provider value={{ user, session, nickname, isAdmin, isLoading, signIn, signUp, verifyOtp, setNicknameForUser, signOut, withdrawUser, recoverPassword, verifyRecoveryOtp, updatePassword }}>
       {children}
     </AuthContext.Provider>
   )
