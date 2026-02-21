@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { createClient } from '@supabase/supabase-js'
-import sharp from 'sharp'
 
 const r2 = new S3Client({
   region: 'auto',
@@ -59,6 +58,7 @@ export async function POST(req: NextRequest) {
     ext = 'gif'
   } else {
     // JPG / PNG / WebP → WebP로 변환 (품질 85, 최대 너비 2000px)
+    const sharp = (await import('sharp')).default
     body = await sharp(input)
       .resize({ width: 2000, withoutEnlargement: true })
       .webp({ quality: 85 })
