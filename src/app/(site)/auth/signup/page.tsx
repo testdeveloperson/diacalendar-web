@@ -136,10 +136,17 @@ export default function SignUpPage() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               required
-              minLength={6}
+              minLength={8}
               className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-700 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
-              placeholder="6자 이상"
+              placeholder="8자 이상"
             />
+            <div className="mt-2 text-xs text-gray-400 dark:text-gray-500 space-y-0.5">
+              <p>안전한 비밀번호를 위해 아래 규칙을 확인해 주세요:</p>
+              <p>• 영문 대문자와 소문자를 모두 포함해 주세요.</p>
+              <p>• 숫자를 하나 이상 넣어주세요.</p>
+              <p>• 특수문자(!, @, #, $ 등)를 포함하면 더욱 안전합니다.</p>
+              <p>• 최소 8자 이상으로 작성해 주세요.</p>
+            </div>
           </div>
 
           {error && (
