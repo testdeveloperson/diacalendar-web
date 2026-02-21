@@ -64,7 +64,7 @@ export default function PostWritePage() {
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">카테고리</label>
+          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">카테고리</label>
           <div className="flex gap-2 flex-wrap">
             {availableCategories.map(cat => (
               <button
@@ -74,7 +74,7 @@ export default function PostWritePage() {
                 className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
                   category === cat.id
                     ? colorActiveClass(cat.color)
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
                 }`}
               >
                 {cat.label}
@@ -84,24 +84,24 @@ export default function PostWritePage() {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">제목</label>
+          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">제목</label>
           <input
             type="text"
             value={title}
             onChange={e => setTitle(e.target.value)}
             placeholder="제목을 입력하세요"
-            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white text-base font-medium placeholder-gray-400"
+            className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-700 text-base text-gray-900 dark:text-gray-100 font-medium placeholder-gray-400"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">내용</label>
+          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">내용</label>
           <textarea
             value={content}
             onChange={e => setContent(e.target.value)}
             placeholder="내용을 입력하세요"
             rows={14}
-            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white text-sm resize-none leading-relaxed placeholder-gray-400"
+            className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-700 text-sm text-gray-900 dark:text-gray-100 resize-none leading-relaxed placeholder-gray-400"
           />
         </div>
 
@@ -118,7 +118,7 @@ export default function PostWritePage() {
           <button
             type="button"
             onClick={() => router.back()}
-            className="flex-1 py-3 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            className="flex-1 py-3 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
           >
             취소
           </button>

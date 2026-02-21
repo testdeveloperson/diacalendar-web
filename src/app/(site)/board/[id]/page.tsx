@@ -286,12 +286,12 @@ export default function PostDetailPage() {
       {/* Confirm dialog */}
       {confirmAction && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl animate-slideUp">
-            <p className="text-gray-700 mb-6 leading-relaxed">{confirmAction.message}</p>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl max-w-sm w-full p-6 shadow-2xl animate-slideUp">
+            <p className="text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">{confirmAction.message}</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirmAction(null)}
-                className="flex-1 py-3 border border-gray-200 rounded-xl text-sm font-semibold hover:bg-gray-50"
+                className="flex-1 py-3 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-300"
               >
                 취소
               </button>
@@ -316,7 +316,7 @@ export default function PostDetailPage() {
       )}
 
       {/* Post */}
-      <div className="bg-white rounded-2xl border border-gray-200/80 p-5 sm:p-7 mb-4">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/80 dark:border-white/10 p-5 sm:p-7 mb-4">
         <div className="flex items-center justify-between mb-4">
           <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${colorClass(getCategoryColor(post.category))}`}>
             {getCategoryLabel(post.category)}
@@ -326,7 +326,7 @@ export default function PostDetailPage() {
             <div className="relative">
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100"
+                className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                   <circle cx="12" cy="5" r="1.5" />
@@ -338,12 +338,12 @@ export default function PostDetailPage() {
               {menuOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
-                  <div className="absolute right-0 top-10 bg-white rounded-xl shadow-xl border border-gray-200/60 py-2 z-50 min-w-[140px] animate-slideUp">
+                  <div className="absolute right-0 top-10 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200/60 dark:border-white/10 py-2 z-50 min-w-[140px] animate-slideUp">
                     {isOwn ? (
                       <>
                         <Link
                           href={`/board/${post.id}/edit`}
-                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
                           onClick={() => setMenuOpen(false)}
                         >
                           <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -368,7 +368,7 @@ export default function PostDetailPage() {
                             setMenuOpen(false)
                             setReportTarget({ type: 'post', id: post.id, authorId: post.author_id })
                           }}
-                          className="flex items-center gap-2.5 w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                          className="flex items-center gap-2.5 w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
                         >
                           <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
@@ -393,19 +393,19 @@ export default function PostDetailPage() {
           )}
         </div>
 
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">{post.title}</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">{post.title}</h1>
 
-        <div className="flex items-center gap-2.5 mb-5 pb-5 border-b border-gray-100">
+        <div className="flex items-center gap-2.5 mb-5 pb-5 border-b border-gray-100 dark:border-gray-800">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-white flex items-center justify-center text-sm font-bold">
             {(post.profiles?.nickname ?? '?')[0]}
           </div>
           <div className="flex-1">
-            <p className="text-sm font-semibold text-gray-900">{post.profiles?.nickname ?? '알 수 없음'}</p>
-            <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{post.profiles?.nickname ?? '알 수 없음'}</p>
+            <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500 mt-0.5">
               <span>{formatRelativeTime(post.created_at)}</span>
               {viewCount > 0 && (
                 <>
-                  <span className="text-gray-200">·</span>
+                  <span className="text-gray-200 dark:text-gray-700">·</span>
                   <span className="flex items-center gap-0.5">
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -419,19 +419,19 @@ export default function PostDetailPage() {
           </div>
         </div>
 
-        <div className="text-gray-700 whitespace-pre-wrap leading-relaxed text-[15px] mb-6">
+        <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed text-[15px] mb-6">
           <LinkableText text={post.content} />
         </div>
 
         {/* 좋아요 / 싫어요 */}
-        <div className="flex items-center gap-3 pt-4 border-t border-gray-100">
+        <div className="flex items-center gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
           <button
             onClick={() => handleReaction('LIKE')}
             disabled={reactionLoading}
             className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
               myReaction === 'LIKE'
                 ? 'bg-blue-600 text-white shadow-sm'
-                : 'bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-600'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600'
             } disabled:opacity-60`}
           >
             <svg className="w-4 h-4" fill={myReaction === 'LIKE' ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={myReaction === 'LIKE' ? 0 : 2} viewBox="0 0 24 24">
@@ -446,7 +446,7 @@ export default function PostDetailPage() {
             className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
               myReaction === 'DISLIKE'
                 ? 'bg-red-500 text-white shadow-sm'
-                : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-500'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-500'
             } disabled:opacity-60`}
           >
             <svg className="w-4 h-4" fill={myReaction === 'DISLIKE' ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={myReaction === 'DISLIKE' ? 0 : 2} viewBox="0 0 24 24">
@@ -459,9 +459,9 @@ export default function PostDetailPage() {
       </div>
 
       {/* Comments */}
-      <div className="bg-white rounded-2xl border border-gray-200/80 p-5 sm:p-7">
-        <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-          <svg className="w-4.5 h-4.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/80 dark:border-white/10 p-5 sm:p-7">
+        <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+          <svg className="w-4.5 h-4.5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
           </svg>
           댓글 {totalComments}개
@@ -469,10 +469,10 @@ export default function PostDetailPage() {
 
         {comments.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-sm text-gray-400">첫 번째 댓글을 남겨보세요</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500">첫 번째 댓글을 남겨보세요</p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-gray-100 dark:divide-gray-800">
             {comments.map(comment => (
               <CommentItem
                 key={comment.id}

@@ -164,15 +164,15 @@ export default function BoardPage() {
       {/* Guidelines dialog */}
       {showGuidelines && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl animate-slideUp">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl animate-slideUp">
             <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4 mx-auto">
               <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h2 className="text-xl font-bold mb-2 text-center">커뮤니티 이용 규칙</h2>
-            <p className="text-sm text-gray-400 text-center mb-5">쾌적한 커뮤니티를 위해 아래 규칙을 지켜주세요</p>
-            <ul className="text-sm text-gray-600 space-y-3 mb-6">
+            <h2 className="text-xl font-bold mb-2 text-center dark:text-gray-100">커뮤니티 이용 규칙</h2>
+            <p className="text-sm text-gray-400 dark:text-gray-500 text-center mb-5">쾌적한 커뮤니티를 위해 아래 규칙을 지켜주세요</p>
+            <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-3 mb-6">
               {[
                 '욕설, 비방, 혐오 표현을 금지합니다.',
                 '스팸, 광고성 글을 금지합니다.',
@@ -181,7 +181,7 @@ export default function BoardPage() {
                 '규칙 위반 시 글이 삭제될 수 있습니다.',
               ].map((rule, i) => (
                 <li key={i} className="flex items-start gap-2.5">
-                  <span className="w-5 h-5 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">{i + 1}</span>
+                  <span className="w-5 h-5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">{i + 1}</span>
                   {rule}
                 </li>
               ))}
@@ -206,7 +206,7 @@ export default function BoardPage() {
         <button
           onClick={() => setIsSearchMode(!isSearchMode)}
           className={`p-2.5 rounded-lg transition-colors flex-shrink-0 ${
-            isSearchMode ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
+            isSearchMode ? 'bg-blue-100 dark:bg-blue-950/50 text-blue-600' : 'text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300'
           }`}
           aria-label="검색"
         >
@@ -224,8 +224,8 @@ export default function BoardPage() {
             onClick={() => setSortKey(opt.key)}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex-shrink-0 transition-colors ${
               sortKey === opt.key
-                ? 'bg-gray-900 text-white'
-                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                ? 'bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
             }`}
           >
             {opt.label}
@@ -246,7 +246,7 @@ export default function BoardPage() {
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="제목 또는 내용으로 검색"
-                className="w-full pl-10 pr-4 py-2.5 bg-gray-100 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white text-sm placeholder-gray-400"
+                className="w-full pl-10 pr-4 py-2.5 bg-gray-100 dark:bg-gray-800 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-gray-700 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                 autoFocus
               />
             </div>
@@ -262,7 +262,7 @@ export default function BoardPage() {
 
       {/* Login banner */}
       {!user && (
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 sm:p-5 mb-5 border border-blue-100/50">
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl p-4 sm:p-5 mb-5 border border-blue-100/50 dark:border-blue-900/50">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
               <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -270,7 +270,7 @@ export default function BoardPage() {
               </svg>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-700">글쓰기와 댓글을 작성하려면 로그인이 필요합니다</p>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">글쓰기와 댓글을 작성하려면 로그인이 필요합니다</p>
               <Link href="/auth/login" className="text-sm font-semibold text-blue-600 hover:text-blue-700">
                 로그인하기 &rarr;
               </Link>
@@ -292,8 +292,8 @@ export default function BoardPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <p className="text-gray-500 font-medium mb-1">게시글을 불러오지 못했습니다</p>
-          <p className="text-sm text-gray-400 mb-4">네트워크 상태를 확인해주세요</p>
+          <p className="text-gray-500 dark:text-gray-400 font-medium mb-1">게시글을 불러오지 못했습니다</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mb-4">네트워크 상태를 확인해주세요</p>
           <button
             onClick={() => fetchPosts(true)}
             className="px-5 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700"
@@ -303,13 +303,13 @@ export default function BoardPage() {
         </div>
       ) : posts.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-            <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+            <svg className="w-8 h-8 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
-          <p className="text-gray-400 font-medium">게시글이 없습니다</p>
-          <p className="text-sm text-gray-300 mt-1">첫 번째 글을 작성해보세요</p>
+          <p className="text-gray-400 dark:text-gray-500 font-medium">게시글이 없습니다</p>
+          <p className="text-sm text-gray-300 dark:text-gray-600 mt-1">첫 번째 글을 작성해보세요</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -334,7 +334,7 @@ export default function BoardPage() {
             <button
               onClick={() => fetchPosts(false)}
               disabled={loadingMore}
-              className="w-full py-3.5 text-sm font-medium text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl disabled:opacity-50 transition-colors"
+              className="w-full py-3.5 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-xl disabled:opacity-50 transition-colors"
             >
               {loadingMore ? (
                 <span className="flex items-center justify-center gap-2">
