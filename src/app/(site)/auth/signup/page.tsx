@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
@@ -14,6 +14,13 @@ export default function SignUpPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [step, setStep] = useState<'form' | 'otp'>('form')
+
+  // 약관 동의 없이 직접 접근한 경우 terms 페이지로 이동
+  useEffect(() => {
+    if (!sessionStorage.getItem('terms_agreed_at')) {
+      router.replace('/auth/terms')
+    }
+  }, [router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -171,6 +178,9 @@ export default function SignUpPage() {
           <p>
             이미 계정이 있으신가요?{' '}
             <Link href="/auth/login" className="text-blue-600 hover:text-blue-700 font-semibold">로그인</Link>
+          </p>
+          <p className="mt-2">
+            <button onClick={() => router.push('/auth/terms')} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 text-xs">약관 다시 보기</button>
           </p>
         </div>
       </div>

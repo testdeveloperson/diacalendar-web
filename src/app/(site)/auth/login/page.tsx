@@ -100,7 +100,7 @@ export default function LoginPage() {
         <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-800 text-center text-sm space-y-2">
           <p>
             계정이 없으신가요?{' '}
-            <Link href="/auth/signup" className="text-blue-600 hover:text-blue-700 font-semibold">회원가입</Link>
+            <Link href="/auth/terms" className="text-blue-600 hover:text-blue-700 font-semibold">회원가입</Link>
           </p>
           <p>
             <Link href="/auth/recover" className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400">비밀번호를 잊으셨나요?</Link>

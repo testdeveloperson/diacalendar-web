@@ -116,12 +116,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const setNicknameForUser = async (newNickname: string) => {
     if (!user) return { error: '로그인이 필요합니다' }
 
+    // 약관 동의 시간 기록 (sessionStorage에서 가져와 DB에 저장)
+    const termsAgreedAt = typeof window !== 'undefined'
+      ? sessionStorage.getItem('terms_agreed_at')
+      : null
+
     const { error } = await supabase.from('profiles').upsert({
       id: user.id,
       nickname: newNickname,
+      ...(termsAgreedAt ? { terms_agreed_at: termsAgreedAt } : {}),
     })
     if (error) return { error: error.message }
 
+    if (termsAgreedAt) sessionStorage.removeItem('terms_agreed_at')
     setNickname(newNickname)
     return { error: null }
   }
