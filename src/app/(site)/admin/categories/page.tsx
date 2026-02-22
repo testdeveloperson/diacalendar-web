@@ -20,9 +20,11 @@ export default function AdminCategoriesPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editLabel, setEditLabel] = useState('')
   const [editColor, setEditColor] = useState('gray')
+  const [editDescription, setEditDescription] = useState('')
   const [newId, setNewId] = useState('')
   const [newLabel, setNewLabel] = useState('')
   const [newColor, setNewColor] = useState('emerald')
+  const [newDescription, setNewDescription] = useState('')
   const [showAddForm, setShowAddForm] = useState(false)
 
   const showSnackbar = (msg: string) => {
@@ -48,17 +50,18 @@ export default function AdminCategoriesPage() {
     setEditingId(cat.id)
     setEditLabel(cat.label)
     setEditColor(cat.color)
+    setEditDescription(cat.description ?? '')
   }
 
   const handleUpdate = async (cat: Category) => {
     const { error } = await supabase
       .from('categories')
-      .update({ label: editLabel.trim(), color: editColor })
+      .update({ label: editLabel.trim(), color: editColor, description: editDescription.trim() || null })
       .eq('id', cat.id)
     if (error) {
       showSnackbar('수정 실패: ' + error.message)
     } else {
-      setCategories(prev => prev.map(c => c.id === cat.id ? { ...c, label: editLabel.trim(), color: editColor } : c))
+      setCategories(prev => prev.map(c => c.id === cat.id ? { ...c, label: editLabel.trim(), color: editColor, description: editDescription.trim() || null } : c))
       showSnackbar('카테고리가 수정되었습니다')
       setEditingId(null)
     }
@@ -87,12 +90,13 @@ export default function AdminCategoriesPage() {
       label: labelVal,
       color: newColor,
       sort_order: maxOrder + 1,
+      description: newDescription.trim() || null,
     })
     if (error) {
       showSnackbar('추가 실패: ' + (error.code === '23505' ? '이미 존재하는 ID입니다' : error.message))
     } else {
       showSnackbar('카테고리가 추가되었습니다')
-      setNewId(''); setNewLabel(''); setNewColor('emerald')
+      setNewId(''); setNewLabel(''); setNewColor('emerald'); setNewDescription('')
       setShowAddForm(false)
       fetchCategories()
     }
@@ -124,7 +128,7 @@ export default function AdminCategoriesPage() {
         {showAddForm && (
           <div className="px-4 py-4 border-b border-blue-100 bg-blue-50/50">
             <p className="text-xs font-semibold text-blue-700 mb-3">새 카테고리</p>
-            <div className="grid grid-cols-[auto_1fr_auto_auto] gap-2 items-end">
+            <div className="grid grid-cols-[auto_1fr_auto_auto] gap-2 items-end mb-2">
               <div>
                 <label className="block text-xs text-gray-500 mb-1">ID (영문대문자)</label>
                 <input
@@ -160,6 +164,16 @@ export default function AdminCategoriesPage() {
                 <button onClick={() => setShowAddForm(false)} className="px-4 py-2 border border-gray-200 text-sm font-semibold rounded-lg hover:bg-gray-50">취소</button>
               </div>
             </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">게시판 설명 (선택)</label>
+              <input
+                type="text"
+                value={newDescription}
+                onChange={e => setNewDescription(e.target.value)}
+                placeholder="예: 회사 공지 및 중요 안내사항을 전달하는 게시판입니다"
+                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
           </div>
         )}
 
@@ -174,30 +188,42 @@ export default function AdminCategoriesPage() {
             {categories.map(cat => (
               <div key={cat.id} className="px-4 py-4">
                 {editingId === cat.id ? (
-                  <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center">
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center">
+                      <input
+                        type="text"
+                        value={editLabel}
+                        onChange={e => setEditLabel(e.target.value)}
+                        className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <select
+                        value={editColor}
+                        onChange={e => setEditColor(e.target.value)}
+                        className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        {COLOR_OPTIONS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                      </select>
+                      <button onClick={() => handleUpdate(cat)} className="px-3 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700">저장</button>
+                      <button onClick={() => setEditingId(null)} className="px-3 py-2 border border-gray-200 text-sm rounded-lg hover:bg-gray-50">취소</button>
+                    </div>
                     <input
                       type="text"
-                      value={editLabel}
-                      onChange={e => setEditLabel(e.target.value)}
-                      className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={editDescription}
+                      onChange={e => setEditDescription(e.target.value)}
+                      placeholder="게시판 설명 (선택)"
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
-                    <select
-                      value={editColor}
-                      onChange={e => setEditColor(e.target.value)}
-                      className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      {COLOR_OPTIONS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-                    </select>
-                    <button onClick={() => handleUpdate(cat)} className="px-3 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700">저장</button>
-                    <button onClick={() => setEditingId(null)} className="px-3 py-2 border border-gray-200 text-sm rounded-lg hover:bg-gray-50">취소</button>
                   </div>
                 ) : (
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${colorClass(cat.color)}`}>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className={`text-xs px-2.5 py-1 rounded-full font-semibold flex-shrink-0 ${colorClass(cat.color)}`}>
                         {cat.label}
                       </span>
-                      <span className="text-xs text-gray-400 font-mono">{cat.id}</span>
+                      <span className="text-xs text-gray-400 font-mono flex-shrink-0">{cat.id}</span>
+                      {cat.description && (
+                        <span className="text-xs text-gray-400 truncate">{cat.description}</span>
+                      )}
                     </div>
                     <div className="flex gap-1">
                       <button

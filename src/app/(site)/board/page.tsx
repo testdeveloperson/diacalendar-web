@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
+import { useCategories } from '@/hooks/useCategories'
 import { Post } from '@/lib/types'
 import CategoryFilter from '@/components/CategoryFilter'
 import PostCard from '@/components/PostCard'
@@ -23,6 +24,7 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
 
 export default function BoardPage() {
   const { user, isLoading: authLoading } = useAuth()
+  const { categories } = useCategories()
   const [posts, setPosts] = useState<Post[]>([])
   const [category, setCategory] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -32,15 +34,23 @@ export default function BoardPage() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [blockedIds, setBlockedIds] = useState<Set<string>>(new Set())
-  const [guidelinesAccepted, setGuidelinesAccepted] = useState(false)
+  const [guidelinesAccepted, setGuidelinesAccepted] = useState(() =>
+    typeof window !== 'undefined' ? localStorage.getItem('guidelines_accepted') === 'true' : false
+  )
   const [showGuidelines, setShowGuidelines] = useState(false)
   const [newPostCount, setNewPostCount] = useState(0)
   const [fetchError, setFetchError] = useState(false)
-  const lastVisitedRef = useRef<string | null>(null)
+  const lastVisited = useState<string | null>(() =>
+    typeof window !== 'undefined' ? localStorage.getItem(LAST_VISITED_KEY) : null
+  )[0]
   const offsetRef = useRef(0)
 
   useEffect(() => {
-    if (!user) { setBlockedIds(new Set()); return }
+    if (!user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setBlockedIds(prev => prev.size > 0 ? new Set() : prev)
+      return
+    }
     supabase
       .from('blocks')
       .select('blocked_id')
@@ -50,19 +60,11 @@ export default function BoardPage() {
       })
   }, [user])
 
+  // 페이지 떠날 때 마지막 방문 시간 갱신
   useEffect(() => {
-    setGuidelinesAccepted(localStorage.getItem('guidelines_accepted') === 'true')
-  }, [])
-
-  // 마지막 방문 시간 읽기 + 페이지 떠날 때 갱신
-  useEffect(() => {
-    const stored = localStorage.getItem(LAST_VISITED_KEY)
-    lastVisitedRef.current = stored
-
     const updateVisitTime = () => {
       localStorage.setItem(LAST_VISITED_KEY, new Date().toISOString())
     }
-
     window.addEventListener('beforeunload', updateVisitTime)
     return () => {
       window.removeEventListener('beforeunload', updateVisitTime)
@@ -130,9 +132,9 @@ export default function BoardPage() {
       if (reset) {
         setPosts(filtered)
         // 마지막 방문 이후 새 글 카운트 (카테고리/검색/정렬 필터 없을 때만)
-        if (!category && !searchQuery.trim() && sortKey === 'latest' && lastVisitedRef.current) {
+        if (!category && !searchQuery.trim() && sortKey === 'latest' && lastVisited) {
           const newCount = filtered.filter(
-            p => new Date(p.created_at) > new Date(lastVisitedRef.current!)
+            p => new Date(p.created_at) > new Date(lastVisited)
           ).length
           setNewPostCount(newCount)
         } else {
@@ -147,10 +149,11 @@ export default function BoardPage() {
 
     setLoading(false)
     setLoadingMore(false)
-  }, [category, searchQuery, sortKey, blockedIds])
+  }, [category, searchQuery, sortKey, blockedIds, lastVisited])
 
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchPosts(true)
   }, [fetchPosts])
 
@@ -158,6 +161,8 @@ export default function BoardPage() {
     e.preventDefault()
     fetchPosts(true)
   }
+
+  const selectedCategory = category ? categories.find(c => c.id === category) : null
 
   if (authLoading) {
     return (
@@ -177,7 +182,7 @@ export default function BoardPage() {
           </svg>
         </div>
         <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-1">로그인이 필요합니다</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">커뮤니티는 가입이 필수입니다.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">커뮤니티는 임직원 전용 서비스입니다</p>
         <Link
           href="/auth/login"
           className="px-6 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 shadow-sm"
@@ -244,6 +249,16 @@ export default function BoardPage() {
           </svg>
         </button>
       </div>
+
+      {/* Category description banner */}
+      {selectedCategory?.description && (
+        <div className="flex items-start gap-2.5 px-4 py-3 mb-3 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-200/60 dark:border-gray-700/60">
+          <svg className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{selectedCategory.description}</p>
+        </div>
+      )}
 
       {/* Sort options */}
       <div className="flex items-center gap-1.5 mb-4 overflow-x-auto">
@@ -334,8 +349,8 @@ export default function BoardPage() {
               key={post.id}
               post={post}
               isNew={
-                !!lastVisitedRef.current &&
-                new Date(post.created_at) > new Date(lastVisitedRef.current)
+                !!lastVisited &&
+                new Date(post.created_at) > new Date(lastVisited)
               }
             />
           ))}
