@@ -15,6 +15,35 @@ export default function ImageUploader({ images, onChange, maxImages = 5 }: Image
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Canvas로 이미지 압축 (GIF 제외) — 4MB 미만으로 줄여 Vercel 제한 회피
+  const compressImage = (file: File): Promise<File> => {
+    return new Promise((resolve) => {
+      if (file.type === 'image/gif') { resolve(file); return }
+      const img = new Image()
+      const url = URL.createObjectURL(file)
+      img.onload = () => {
+        URL.revokeObjectURL(url)
+        const MAX_WIDTH = 2000
+        const scale = img.width > MAX_WIDTH ? MAX_WIDTH / img.width : 1
+        const canvas = document.createElement('canvas')
+        canvas.width = Math.round(img.width * scale)
+        canvas.height = Math.round(img.height * scale)
+        const ctx = canvas.getContext('2d')!
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) { resolve(file); return }
+            resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }))
+          },
+          'image/jpeg',
+          0.85
+        )
+      }
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(file) }
+      img.src = url
+    })
+  }
+
   const handleFiles = async (files: FileList) => {
     const remaining = maxImages - images.length
     if (remaining <= 0) return
@@ -32,12 +61,13 @@ export default function ImageUploader({ images, onChange, maxImages = 5 }: Image
 
     const newUrls: string[] = []
     for (const file of selected) {
-      if (file.size > 20 * 1024 * 1024) {
-        setError(`${file.name}: 파일 크기는 20MB 이하여야 합니다`)
+      if (file.size > 50 * 1024 * 1024) {
+        setError(`${file.name}: 파일 크기는 50MB 이하여야 합니다`)
         continue
       }
+      const compressed = await compressImage(file)
       const form = new FormData()
-      form.append('file', file)
+      form.append('file', compressed)
       const res = await fetch('/api/upload', {
         method: 'POST',
         headers: { Authorization: `Bearer ${session.access_token}` },

@@ -12,7 +12,7 @@ const r2 = new S3Client({
 })
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-const MAX_SIZE = 20 * 1024 * 1024 // 20MB
+const MAX_SIZE = 10 * 1024 * 1024 // 10MB (클라이언트에서 압축 후 전송)
 
 export async function POST(req: NextRequest) {
   // Supabase JWT로 인증 확인
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'JPG, PNG, GIF, WEBP 형식만 지원합니다' }, { status: 400 })
   }
   if (file.size > MAX_SIZE) {
-    return NextResponse.json({ error: '파일 크기는 20MB 이하여야 합니다' }, { status: 400 })
+    return NextResponse.json({ error: '파일 크기는 10MB 이하여야 합니다' }, { status: 400 })
   }
 
   const input = Buffer.from(await file.arrayBuffer())
