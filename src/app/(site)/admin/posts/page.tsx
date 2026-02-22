@@ -15,7 +15,7 @@ interface AdminPost {
 }
 
 export default function AdminPostsPage() {
-  const { categories, getCategoryLabel, getCategoryColor } = useCategories()
+  const { categories, getCategoryColor } = useCategories()
   const [posts, setPosts] = useState<AdminPost[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -97,12 +97,12 @@ export default function AdminPostsPage() {
           onChange={e => setSearch(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && fetchPosts()}
           placeholder="제목 검색..."
-          className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+          className="flex-1 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <select
           value={categoryFilter}
           onChange={e => setCategoryFilter(e.target.value)}
-          className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">전체</option>
           {categories.map(cat => (
@@ -115,8 +115,9 @@ export default function AdminPostsPage() {
       </div>
 
       {/* 게시글 목록 */}
-      <div className="bg-white rounded-2xl border border-gray-200/80 overflow-hidden">
-        <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-0 text-xs font-semibold text-gray-500 bg-gray-50 px-4 py-3 border-b border-gray-100">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200/80 dark:border-gray-700 overflow-hidden">
+        {/* 데스크톱 테이블 헤더 (md 이상) */}
+        <div className="hidden md:grid grid-cols-[1fr_auto_auto_auto_auto] gap-0 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 px-4 py-3 border-b border-gray-100 dark:border-gray-700">
           <span>제목</span>
           <span className="px-3">카테고리</span>
           <span className="px-3">작성자</span>
@@ -131,35 +132,69 @@ export default function AdminPostsPage() {
         ) : posts.length === 0 ? (
           <div className="text-center py-12 text-sm text-gray-400">게시글이 없습니다</div>
         ) : (
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-gray-100 dark:divide-gray-700">
             {posts.map(post => (
-              <div key={post.id} className="grid grid-cols-[1fr_auto_auto_auto_auto] items-center gap-0 px-4 py-3 hover:bg-gray-50">
-                <Link href={`/board/${post.id}`} target="_blank" className="text-sm text-gray-800 hover:text-blue-600 truncate pr-3">
-                  {post.title}
-                </Link>
-                <div className="px-3">
-                  <select
-                    value={post.category}
-                    onChange={e => handleCategoryChange(post.id, e.target.value)}
-                    className={`text-xs px-2 py-1 rounded-full font-semibold border-0 cursor-pointer focus:outline-none ${colorClass(getCategoryColor(post.category))}`}
-                  >
-                    {categories.map(cat => (
-                      <option key={cat.id} value={cat.id}>{cat.label}</option>
-                    ))}
-                  </select>
+              <div key={post.id}>
+                {/* 데스크톱 행 */}
+                <div className="hidden md:grid grid-cols-[1fr_auto_auto_auto_auto] items-center gap-0 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                  <Link href={`/board/${post.id}`} target="_blank" className="text-sm text-gray-800 dark:text-gray-200 hover:text-blue-600 truncate pr-3">
+                    {post.title}
+                  </Link>
+                  <div className="px-3">
+                    <select
+                      value={post.category}
+                      onChange={e => handleCategoryChange(post.id, e.target.value)}
+                      className={`text-xs px-2 py-1 rounded-full font-semibold border-0 cursor-pointer focus:outline-none ${colorClass(getCategoryColor(post.category))}`}
+                    >
+                      {categories.map(cat => (
+                        <option key={cat.id} value={cat.id}>{cat.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <span className="px-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{post.profiles?.nickname ?? '알 수 없음'}</span>
+                  <span className="px-3 text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">{formatRelativeTime(post.created_at)}</span>
+                  <div className="px-3">
+                    <button
+                      onClick={() => setConfirmDelete(post.id)}
+                      className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                      title="삭제"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
-                <span className="px-3 text-xs text-gray-500 whitespace-nowrap">{post.profiles?.nickname ?? '알 수 없음'}</span>
-                <span className="px-3 text-xs text-gray-400 whitespace-nowrap">{formatRelativeTime(post.created_at)}</span>
-                <div className="px-3">
-                  <button
-                    onClick={() => setConfirmDelete(post.id)}
-                    className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                    title="삭제"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
+
+                {/* 모바일 카드 */}
+                <div className="md:hidden px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                    <Link href={`/board/${post.id}`} target="_blank" className="text-sm font-medium text-gray-800 dark:text-gray-200 hover:text-blue-600 leading-snug flex-1">
+                      {post.title}
+                    </Link>
+                    <button
+                      onClick={() => setConfirmDelete(post.id)}
+                      className="flex-shrink-0 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                      title="삭제"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <select
+                      value={post.category}
+                      onChange={e => handleCategoryChange(post.id, e.target.value)}
+                      className={`text-xs px-2 py-0.5 rounded-full font-semibold border-0 cursor-pointer focus:outline-none ${colorClass(getCategoryColor(post.category))}`}
+                    >
+                      {categories.map(cat => (
+                        <option key={cat.id} value={cat.id}>{cat.label}</option>
+                      ))}
+                    </select>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">{post.profiles?.nickname ?? '알 수 없음'}</span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">{formatRelativeTime(post.created_at)}</span>
+                  </div>
                 </div>
               </div>
             ))}
