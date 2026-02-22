@@ -32,8 +32,8 @@ export default function ImageUploader({ images, onChange, maxImages = 5 }: Image
 
     const newUrls: string[] = []
     for (const file of selected) {
-      if (file.size > 5 * 1024 * 1024) {
-        setError(`${file.name}: 파일 크기는 5MB 이하여야 합니다`)
+      if (file.size > 20 * 1024 * 1024) {
+        setError(`${file.name}: 파일 크기는 20MB 이하여야 합니다`)
         continue
       }
       const form = new FormData()
