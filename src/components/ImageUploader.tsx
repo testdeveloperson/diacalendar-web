@@ -19,7 +19,7 @@ export default function ImageUploader({ images, onChange, maxImages = 5 }: Image
   const compressImage = (file: File): Promise<File> => {
     return new Promise((resolve) => {
       if (file.type === 'image/gif') { resolve(file); return }
-      const img = new Image()
+      const img = document.createElement('img')
       const url = URL.createObjectURL(file)
       img.onload = () => {
         URL.revokeObjectURL(url)
