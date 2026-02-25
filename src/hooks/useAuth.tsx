@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react'
 import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { computeAnonId } from '@/lib/anonId'
@@ -29,6 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [nickname, setNickname] = useState<string | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const initializedRef = useRef(false)
 
   const fetchProfile = async (id: string) => {
     const { data } = await supabase
@@ -48,35 +49,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    const init = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        setSession(session)
-        setUser(session?.user ?? null)
-        if (session?.user?.email) {
-          const id = await resolveAnonId(session.user.email)
-          if (id) await fetchProfile(id)
-        }
-      } finally {
-        setIsLoading(false)
-      }
-    }
-    init()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      if (session?.user?.email) {
-        const id = await resolveAnonId(session.user.email)
+    const handleSession = async (newSession: Session | null) => {
+      setSession(newSession)
+      setUser(newSession?.user ?? null)
+      if (newSession?.user?.email) {
+        const id = await resolveAnonId(newSession.user.email)
         if (id) await fetchProfile(id)
       } else {
         setAnonId(null)
         setNickname(null)
         setIsAdmin(false)
       }
+    }
+
+    // onAuthStateChange handles everything including INITIAL_SESSION
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      if (event === 'INITIAL_SESSION') {
+        // First event — restores session from localStorage
+        await handleSession(newSession)
+        initializedRef.current = true
+        setIsLoading(false)
+      } else {
+        // SIGNED_IN, SIGNED_OUT, TOKEN_REFRESHED, etc.
+        await handleSession(newSession)
+      }
     })
 
-    return () => subscription.unsubscribe()
+    // Safety fallback: if INITIAL_SESSION never fires (shouldn't happen, but just in case)
+    const timeout = setTimeout(() => {
+      if (!initializedRef.current) {
+        initializedRef.current = true
+        setIsLoading(false)
+      }
+    }, 5000)
+
+    return () => {
+      subscription.unsubscribe()
+      clearTimeout(timeout)
+    }
   }, [])
 
   const signInWithOAuth = async (provider: OAuthProvider) => {

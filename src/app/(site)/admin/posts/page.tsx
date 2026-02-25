@@ -5,6 +5,27 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { formatRelativeTime, colorClass } from '@/lib/types'
 import { useCategories } from '@/hooks/useCategories'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { toast } from 'sonner'
+import { Loader2, Trash2, Search } from 'lucide-react'
 
 interface AdminPost {
   id: number
@@ -21,12 +42,6 @@ export default function AdminPostsPage() {
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<string>('')
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null)
-  const [snackbar, setSnackbar] = useState<string | null>(null)
-
-  const showSnackbar = (msg: string) => {
-    setSnackbar(msg)
-    setTimeout(() => setSnackbar(null), 3000)
-  }
 
   const fetchPosts = useCallback(async () => {
     setLoading(true)
@@ -53,9 +68,9 @@ export default function AdminPostsPage() {
   const handleDelete = async (postId: number) => {
     const { error } = await supabase.from('posts').delete().eq('id', postId)
     if (error) {
-      showSnackbar('삭제 실패: ' + error.message)
+      toast.error('삭제 실패: ' + error.message)
     } else {
-      showSnackbar('게시글이 삭제되었습니다')
+      toast.success('게시글이 삭제되었습니다')
       setPosts(prev => prev.filter(p => p.id !== postId))
     }
     setConfirmDelete(null)
@@ -65,59 +80,62 @@ export default function AdminPostsPage() {
     const { error } = await supabase.from('posts').update({ category: newCategory }).eq('id', postId)
     if (!error) {
       setPosts(prev => prev.map(p => p.id === postId ? { ...p, category: newCategory } : p))
-      showSnackbar('카테고리가 변경되었습니다')
+      toast.success('카테고리가 변경되었습니다')
     }
   }
 
   return (
     <div>
-      {snackbar && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-5 py-3 rounded-xl text-sm z-50 shadow-xl">
-          {snackbar}
-        </div>
-      )}
-
-      {confirmDelete !== null && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl">
-            <p className="text-gray-700 mb-6">이 게시글을 삭제하시겠습니까? 댓글도 함께 삭제됩니다.</p>
-            <div className="flex gap-3">
-              <button onClick={() => setConfirmDelete(null)} className="flex-1 py-3 border border-gray-200 rounded-xl text-sm font-semibold hover:bg-gray-50">취소</button>
-              <button onClick={() => handleDelete(confirmDelete)} className="flex-1 py-3 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700">삭제</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AlertDialog open={confirmDelete !== null} onOpenChange={(open) => { if (!open) setConfirmDelete(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>게시글 삭제</AlertDialogTitle>
+            <AlertDialogDescription>
+              이 게시글을 삭제하시겠습니까? 댓글도 함께 삭제됩니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => confirmDelete !== null && handleDelete(confirmDelete)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              삭제
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* 검색 + 필터 */}
       <div className="flex gap-2 mb-4">
-        <input
+        <Input
           type="text"
           value={search}
           onChange={e => setSearch(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && fetchPosts()}
           placeholder="제목 검색..."
-          className="flex-1 px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-1"
         />
-        <select
-          value={categoryFilter}
-          onChange={e => setCategoryFilter(e.target.value)}
-          className="px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">전체</option>
-          {categories.map(cat => (
-            <option key={cat.id} value={cat.id}>{cat.label}</option>
-          ))}
-        </select>
-        <button onClick={fetchPosts} className="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700">
+        <Select value={categoryFilter || '__all__'} onValueChange={v => setCategoryFilter(v === '__all__' ? '' : v)}>
+          <SelectTrigger className="w-[120px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">전체</SelectItem>
+            {categories.map(cat => (
+              <SelectItem key={cat.id} value={cat.id}>{cat.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button onClick={fetchPosts}>
+          <Search className="w-4 h-4 mr-1.5" />
           검색
-        </button>
+        </Button>
       </div>
 
       {/* 게시글 목록 */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200/80 dark:border-gray-700 overflow-hidden">
-        {/* 데스크톱 테이블 헤더 (md 이상) */}
-        <div className="hidden md:grid grid-cols-[1fr_auto_auto_auto_auto] gap-0 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+      <div className="bg-card rounded-2xl border overflow-hidden">
+        <div className="hidden md:grid grid-cols-[1fr_auto_auto_auto_auto] gap-0 text-xs font-semibold text-muted-foreground bg-muted/50 px-4 py-3 border-b">
           <span>제목</span>
           <span className="px-3">카테고리</span>
           <span className="px-3">작성자</span>
@@ -127,17 +145,17 @@ export default function AdminPostsPage() {
 
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
         ) : posts.length === 0 ? (
-          <div className="text-center py-12 text-sm text-gray-400">게시글이 없습니다</div>
+          <div className="text-center py-12 text-sm text-muted-foreground">게시글이 없습니다</div>
         ) : (
-          <div className="divide-y divide-gray-100 dark:divide-gray-700">
+          <div className="divide-y">
             {posts.map(post => (
               <div key={post.id}>
-                {/* 데스크톱 행 */}
-                <div className="hidden md:grid grid-cols-[1fr_auto_auto_auto_auto] items-center gap-0 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                  <Link href={`/board/${post.id}`} target="_blank" className="text-sm text-gray-800 dark:text-gray-200 hover:text-blue-600 truncate pr-3">
+                {/* Desktop */}
+                <div className="hidden md:grid grid-cols-[1fr_auto_auto_auto_auto] items-center gap-0 px-4 py-3 hover:bg-muted/30">
+                  <Link href={`/board/${post.id}`} target="_blank" className="text-sm text-foreground hover:text-primary truncate pr-3">
                     {post.title}
                   </Link>
                   <div className="px-3">
@@ -151,36 +169,34 @@ export default function AdminPostsPage() {
                       ))}
                     </select>
                   </div>
-                  <span className="px-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{post.profiles?.nickname ?? '알 수 없음'}</span>
-                  <span className="px-3 text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">{formatRelativeTime(post.created_at)}</span>
+                  <span className="px-3 text-xs text-muted-foreground whitespace-nowrap">{post.profiles?.nickname ?? '알 수 없음'}</span>
+                  <span className="px-3 text-xs text-muted-foreground whitespace-nowrap">{formatRelativeTime(post.created_at)}</span>
                   <div className="px-3">
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => setConfirmDelete(post.id)}
-                      className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                      title="삭제"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
 
-                {/* 모바일 카드 */}
-                <div className="md:hidden px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                {/* Mobile */}
+                <div className="md:hidden px-4 py-3 hover:bg-muted/30">
                   <div className="flex items-start justify-between gap-2 mb-1.5">
-                    <Link href={`/board/${post.id}`} target="_blank" className="text-sm font-medium text-gray-800 dark:text-gray-200 hover:text-blue-600 leading-snug flex-1">
+                    <Link href={`/board/${post.id}`} target="_blank" className="text-sm font-medium text-foreground hover:text-primary leading-snug flex-1">
                       {post.title}
                     </Link>
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => setConfirmDelete(post.id)}
-                      className="flex-shrink-0 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                      title="삭제"
+                      className="flex-shrink-0 h-7 w-7 text-muted-foreground hover:text-destructive"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <select
@@ -192,8 +208,8 @@ export default function AdminPostsPage() {
                         <option key={cat.id} value={cat.id}>{cat.label}</option>
                       ))}
                     </select>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">{post.profiles?.nickname ?? '알 수 없음'}</span>
-                    <span className="text-xs text-gray-400 dark:text-gray-500">{formatRelativeTime(post.created_at)}</span>
+                    <span className="text-xs text-muted-foreground">{post.profiles?.nickname ?? '알 수 없음'}</span>
+                    <span className="text-xs text-muted-foreground">{formatRelativeTime(post.created_at)}</span>
                   </div>
                 </div>
               </div>
@@ -202,7 +218,7 @@ export default function AdminPostsPage() {
         )}
       </div>
 
-      <p className="text-xs text-gray-400 mt-3 text-right">최대 100개 표시 · 카테고리는 셀렉트박스에서 바로 변경 가능</p>
+      <p className="text-xs text-muted-foreground mt-3 text-right">최대 100개 표시 · 카테고리는 셀렉트박스에서 바로 변경 가능</p>
     </div>
   )
 }
