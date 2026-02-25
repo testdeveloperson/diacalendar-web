@@ -23,12 +23,15 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null)
 
 async function resolveProfile(email: string) {
+  console.log('[Auth] resolveProfile start, email:', email)
   const id = await computeAnonId(email)
-  const { data } = await supabase
+  console.log('[Auth] anonId computed:', id)
+  const { data, error } = await supabase
     .from('profiles')
     .select('nickname, is_admin')
     .eq('id', id)
     .maybeSingle()
+  console.log('[Auth] profile query result:', { data, error })
   return { anonId: id, nickname: data?.nickname ?? null, isAdmin: data?.is_admin ?? false }
 }
 
@@ -67,9 +70,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // getSession으로 localStorage 세션 즉시 복원
     supabase.auth.getSession().then(async ({ data: { session: s } }) => {
+      console.log('[Auth] getSession result:', { hasSession: !!s, email: s?.user?.email, cancelled })
       await applySession(s)
-      if (!cancelled) setIsLoading(false)
-    }).catch(() => {
+      if (!cancelled) {
+        console.log('[Auth] setIsLoading(false)')
+        setIsLoading(false)
+      } else {
+        console.log('[Auth] cancelled, skipping setIsLoading')
+      }
+    }).catch((err) => {
+      console.error('[Auth] getSession error:', err)
       if (!cancelled) setIsLoading(false)
     })
 
