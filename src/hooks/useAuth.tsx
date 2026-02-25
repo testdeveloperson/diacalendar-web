@@ -22,19 +22,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
-async function resolveProfile(email: string) {
-  console.log('[Auth] resolveProfile start, email:', email)
-  const id = await computeAnonId(email)
-  console.log('[Auth] anonId computed:', id)
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('nickname, is_admin')
-    .eq('id', id)
-    .maybeSingle()
-  console.log('[Auth] profile query result:', { data, error })
-  return { anonId: id, nickname: data?.nickname ?? null, isAdmin: data?.is_admin ?? false }
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
@@ -43,54 +30,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    let cancelled = false
+  // 세션에서 프로필 정보를 가져와서 상태에 반영
+  const applySession = async (s: Session | null) => {
+    setSession(s)
+    setUser(s?.user ?? null)
 
-    const applySession = async (s: Session | null) => {
-      if (cancelled) return
-      setSession(s)
-      setUser(s?.user ?? null)
-
-      if (s?.user?.email) {
-        try {
-          const profile = await resolveProfile(s.user.email)
-          if (cancelled) return
-          setAnonId(profile.anonId)
-          setNickname(profile.nickname)
-          setIsAdmin(profile.isAdmin)
-        } catch {
-          // keep user logged in, profile just failed
-        }
-      } else {
-        setAnonId(null)
-        setNickname(null)
-        setIsAdmin(false)
-      }
+    if (!s?.user?.email) {
+      setAnonId(null)
+      setNickname(null)
+      setIsAdmin(false)
+      return
     }
 
-    // getSession으로 localStorage 세션 즉시 복원
-    supabase.auth.getSession().then(async ({ data: { session: s } }) => {
-      console.log('[Auth] getSession result:', { hasSession: !!s, email: s?.user?.email, cancelled })
-      await applySession(s)
-      if (!cancelled) {
-        console.log('[Auth] setIsLoading(false)')
-        setIsLoading(false)
-      } else {
-        console.log('[Auth] cancelled, skipping setIsLoading')
-      }
-    }).catch((err) => {
-      console.error('[Auth] getSession error:', err)
-      if (!cancelled) setIsLoading(false)
-    })
+    try {
+      const id = await computeAnonId(s.user.email)
+      setAnonId(id)
 
-    // 이후 이벤트(로그인, 로그아웃, 토큰 갱신) 구독
+      const { data } = await supabase
+        .from('profiles')
+        .select('nickname, is_admin')
+        .eq('id', id)
+        .maybeSingle()
+
+      setNickname(data?.nickname ?? null)
+      setIsAdmin(data?.is_admin ?? false)
+    } catch (err) {
+      console.error('[Auth] profile fetch error:', err)
+    }
+  }
+
+  useEffect(() => {
+    let ignore = false
+
+    const init = async () => {
+      try {
+        const { data: { session: s } } = await supabase.auth.getSession()
+        if (!ignore) await applySession(s)
+      } catch (err) {
+        console.error('[Auth] getSession error:', err)
+      } finally {
+        if (!ignore) setIsLoading(false)
+      }
+    }
+    init()
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, s) => {
       if (event === 'INITIAL_SESSION') return
-      await applySession(s)
+      if (!ignore) await applySession(s)
     })
 
     return () => {
-      cancelled = true
+      ignore = true
       subscription.unsubscribe()
     }
   }, [])
