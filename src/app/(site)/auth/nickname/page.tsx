@@ -4,9 +4,14 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Loader2, User } from 'lucide-react'
 
 export default function NicknamePage() {
-  const { user, nickname: existingNickname, isLoading, setNicknameForUser } = useAuth()
+  const { user, anonId, nickname: existingNickname, isLoading, setNicknameForUser } = useAuth()
   const router = useRouter()
   const [nickname, setNickname] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -24,7 +29,7 @@ export default function NicknamePage() {
   }, [isLoading, user, existingNickname, router])
 
   const checkDuplicate = useCallback(async (value: string) => {
-    if (!user || !/^[가-힣]{1,5}$/.test(value.trim())) {
+    if (!anonId || !/^[가-힣]{1,5}$/.test(value.trim())) {
       setIsDuplicate(null)
       return
     }
@@ -34,12 +39,12 @@ export default function NicknamePage() {
       .from('profiles')
       .select('id')
       .eq('nickname', value.trim())
-      .neq('id', user.id)
+      .neq('id', anonId)
       .limit(1)
 
     setIsDuplicate(data !== null && data.length > 0)
     setChecking(false)
-  }, [user])
+  }, [anonId])
 
   useEffect(() => {
     if (!/^[가-힣]{1,5}$/.test(nickname.trim())) {
@@ -83,63 +88,61 @@ export default function NicknamePage() {
 
   if (isLoading || (!user && !isLoading)) {
     return (
-      <div className="max-w-sm mx-auto mt-16 text-center">
-        <p className="text-gray-600">로딩 중...</p>
+      <div className="flex items-center justify-center mt-20">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     )
   }
 
   return (
     <div className="max-w-sm mx-auto mt-10 sm:mt-20">
-      <div className="bg-white rounded-2xl border border-gray-200/80 p-6 sm:p-8 shadow-sm">
-        <div className="text-center mb-8">
-          <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
-            <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
+      <Card>
+        <CardHeader className="text-center">
+          <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-2 shadow-sm">
+            <User className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">닉네임 설정</h1>
-          <p className="text-sm text-gray-400 mt-1">커뮤니티에서 사용할 닉네임을 설정하세요</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">닉네임</label>
-            <input
-              type="text"
-              value={nickname}
-              onChange={e => setNickname(e.target.value)}
-              required
-              maxLength={5}
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white text-sm placeholder-gray-400"
-              placeholder="한글 1~5자"
-            />
-            <p className="mt-1.5 text-xs text-gray-400">한글만 사용 가능, 최대 5자</p>
-            {/^[가-힣]{1,5}$/.test(nickname.trim()) && (
-              <p className={`mt-1 text-xs ${checking ? 'text-gray-400' : isDuplicate ? 'text-red-500' : 'text-green-500'}`}>
-                {checking ? '확인 중...' : isDuplicate ? '이미 사용 중인 닉네임입니다' : '사용 가능한 닉네임입니다'}
-              </p>
-            )}
-          </div>
-
-          {error && (
-            <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 px-4 py-3 rounded-xl">
-              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              {error}
+          <CardTitle className="text-2xl">닉네임 설정</CardTitle>
+          <CardDescription>커뮤니티에서 사용할 닉네임을 설정하세요</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="nickname">닉네임</Label>
+              <Input
+                id="nickname"
+                value={nickname}
+                onChange={e => setNickname(e.target.value)}
+                required
+                maxLength={5}
+                placeholder="한글 1~5자"
+                autoFocus
+              />
+              <p className="text-xs text-muted-foreground">한글만 사용 가능, 최대 5자</p>
+              {/^[가-힣]{1,5}$/.test(nickname.trim()) && (
+                <p className={`text-xs ${checking ? 'text-muted-foreground' : isDuplicate ? 'text-destructive' : 'text-green-500'}`}>
+                  {checking ? '확인 중...' : isDuplicate ? '이미 사용 중인 닉네임입니다' : '사용 가능한 닉네임입니다'}
+                </p>
+              )}
             </div>
-          )}
 
-          <button
-            type="submit"
-            disabled={submitting || checking || isDuplicate === true || !/^[가-힣]{1,5}$/.test(nickname.trim())}
-            className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-50 shadow-sm"
-          >
-            {submitting ? '설정 중...' : '닉네임 설정'}
-          </button>
-        </form>
-      </div>
+            {error && (
+              <div className="text-sm text-destructive bg-destructive/10 px-4 py-3 rounded-lg">
+                {error}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              disabled={submitting || checking || isDuplicate === true || !/^[가-힣]{1,5}$/.test(nickname.trim())}
+              className="w-full"
+              size="lg"
+            >
+              {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {submitting ? '설정 중...' : '닉네임 설정'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   )
 }

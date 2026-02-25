@@ -7,25 +7,25 @@ import { useAuth } from '@/hooks/useAuth'
 import { BlockedUser, formatRelativeTime } from '@/lib/types'
 
 export default function BlockedUsersPage() {
-  const { user } = useAuth()
+  const { user, anonId } = useAuth()
   const router = useRouter()
   const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!user) return
+    if (!anonId) return
     const fetch = async () => {
       const { data } = await supabase
         .from('blocks')
         .select('id,blocker_id,blocked_id,created_at,profiles:blocked_id(nickname)')
-        .eq('blocker_id', user.id)
+        .eq('blocker_id', anonId)
         .order('created_at', { ascending: false })
 
       if (data) setBlockedUsers(data as unknown as BlockedUser[])
       setLoading(false)
     }
     fetch()
-  }, [user])
+  }, [anonId])
 
   if (!user) {
     router.push('/auth/login')
@@ -36,7 +36,7 @@ export default function BlockedUsersPage() {
     await supabase
       .from('blocks')
       .delete()
-      .eq('blocker_id', user.id)
+      .eq('blocker_id', anonId!)
       .eq('blocked_id', blockedId)
 
     setBlockedUsers(prev => prev.filter(b => b.blocked_id !== blockedId))

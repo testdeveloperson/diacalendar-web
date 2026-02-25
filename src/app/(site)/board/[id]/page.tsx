@@ -41,7 +41,7 @@ function LinkableText({ text }: { text: string }) {
 
 export default function PostDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const { user } = useAuth()
+  const { user, anonId } = useAuth()
   const { getCategoryLabel, getCategoryColor } = useCategories()
   const router = useRouter()
 
@@ -87,10 +87,10 @@ export default function PostDetailPage() {
   }, [id])
 
   const recordView = useCallback(async () => {
-    if (!user) return
+    if (!anonId) return
     // 중복 시 unique 제약으로 자동 무시
-    await supabase.from('post_views').insert({ post_id: Number(id), user_id: user.id })
-  }, [id, user])
+    await supabase.from('post_views').insert({ post_id: Number(id), user_id: anonId })
+  }, [id, anonId])
 
   const fetchCounts = useCallback(async () => {
     const [{ count: views }, { count: likes }, { count: dislikes }] = await Promise.all([
@@ -102,25 +102,25 @@ export default function PostDetailPage() {
     setLikeCount(likes ?? 0)
     setDislikeCount(dislikes ?? 0)
 
-    if (user) {
+    if (anonId) {
       const { data } = await supabase
         .from('post_reactions')
         .select('reaction')
         .eq('post_id', id)
-        .eq('user_id', user.id)
+        .eq('user_id', anonId)
         .maybeSingle()
       setMyReaction((data?.reaction as 'LIKE' | 'DISLIKE') ?? null)
     }
-  }, [id, user])
+  }, [id, anonId])
 
   const handleReaction = async (type: 'LIKE' | 'DISLIKE') => {
-    if (!user) { showSnackbar('로그인이 필요합니다'); return }
+    if (!anonId) { showSnackbar('로그인이 필요합니다'); return }
     setReactionLoading(true)
     if (myReaction === type) {
-      await supabase.from('post_reactions').delete().eq('post_id', id).eq('user_id', user.id)
+      await supabase.from('post_reactions').delete().eq('post_id', id).eq('user_id', anonId)
       setMyReaction(null)
     } else {
-      await supabase.from('post_reactions').upsert({ post_id: Number(id), user_id: user.id, reaction: type })
+      await supabase.from('post_reactions').upsert({ post_id: Number(id), user_id: anonId, reaction: type })
       setMyReaction(type)
     }
     await fetchCounts()
@@ -171,7 +171,7 @@ export default function PostDetailPage() {
     const { error } = await supabase.from('comments').insert({
       post_id: Number(id),
       parent_id: replyTarget?.id ?? null,
-      author_id: user.id,
+      author_id: anonId!,
       content: commentText.trim(),
     })
 
@@ -215,7 +215,7 @@ export default function PostDetailPage() {
     setReportLoading(true)
 
     const { error } = await supabase.from('reports').insert({
-      reporter_id: user.id,
+      reporter_id: anonId!,
       content_type: reportTarget.type,
       content_id: reportTarget.id,
       target_author_id: reportTarget.authorId,
@@ -238,7 +238,7 @@ export default function PostDetailPage() {
       message: '이 사용자를 차단하시겠습니까? 차단 시 해당 사용자의 글이 보이지 않습니다.',
       action: async () => {
         const { error } = await supabase.from('blocks').insert({
-          blocker_id: user.id,
+          blocker_id: anonId!,
           blocked_id: blockedId,
         })
         if (error?.code === '23505') {
@@ -273,7 +273,7 @@ export default function PostDetailPage() {
     )
   }
 
-  const isOwn = user?.id === post.author_id
+  const isOwn = anonId === post.author_id
   const totalComments = comments.reduce((acc, c) => acc + 1 + (c.replies?.length ?? 0), 0)
 
   return (
@@ -528,7 +528,7 @@ export default function PostDetailPage() {
               <CommentItem
                 key={comment.id}
                 comment={comment}
-                currentUserId={user?.id ?? null}
+                currentUserId={anonId ?? null}
                 onReply={setReplyTarget}
                 onDelete={handleDeleteComment}
                 onReport={(type, contentId, authorId) =>

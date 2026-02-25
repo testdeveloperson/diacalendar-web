@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/hooks/useAuth";
 import { CategoriesProvider } from "@/hooks/useCategories";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: "DiaCalendar",
@@ -14,13 +16,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko">
+    <html lang="ko" suppressHydrationWarning>
       <body className="antialiased min-h-screen">
-        <AuthProvider>
-          <CategoriesProvider>
-            {children}
-          </CategoriesProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <CategoriesProvider>
+              {children}
+              <Toaster />
+            </CategoriesProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

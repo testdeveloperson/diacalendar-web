@@ -4,12 +4,22 @@ import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { FileText, Ban, Shield, LogOut, UserMinus, ChevronDown, MessageCircle } from 'lucide-react'
 
 const LAST_VISITED_KEY = 'board_last_visited_at'
 
 export default function Header() {
   const { user, nickname, signOut, isAdmin } = useAuth()
-  const [menuOpen, setMenuOpen] = useState(false)
   const [hasNewPosts, setHasNewPosts] = useState(false)
 
   useEffect(() => {
@@ -27,114 +37,79 @@ export default function Header() {
   }, [])
 
   return (
-    <header className="bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-200/60 dark:border-white/10 sticky top-0 z-50">
+    <header className="bg-background/80 backdrop-blur-md border-b sticky top-0 z-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <Link href="/board" className="flex items-center gap-2.5 group">
           <div className="relative">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-sm">
-              <svg className="w-4.5 h-4.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
+              <MessageCircle className="w-4 h-4 text-white" />
             </div>
             {hasNewPosts && (
-              <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white dark:border-gray-950" />
+              <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-background" />
             )}
           </div>
-          <span className="text-lg font-bold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 transition-colors">
-            서교공 커뮤니티
+          <span className="text-lg font-bold group-hover:text-blue-600 transition-colors">
+            커뮤니티
           </span>
         </Link>
 
-        <div className="relative">
+        <div>
           {user ? (
-            <>
-              <button
-                onClick={() => setMenuOpen(!menuOpen)}
-                className="flex items-center gap-2.5 px-3 py-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              >
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-white flex items-center justify-center text-sm font-bold shadow-sm">
-                  {(nickname ?? '?')[0]}
-                </div>
-                <span className="hidden sm:inline text-sm font-medium text-gray-700 dark:text-gray-300">{nickname ?? '사용자'}</span>
-                <svg className="hidden sm:block w-4 h-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-
-              {menuOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
-                  <div className="absolute right-0 top-12 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200/60 dark:border-white/10 py-2 z-50 min-w-[180px] animate-slideUp">
-                    <div className="px-4 py-2.5 border-b border-gray-100 dark:border-gray-800">
-                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{nickname ?? '사용자'}</p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{user.email}</p>
-                    </div>
-                    <div className="py-1">
-                      <Link
-                        href="/board/my"
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
-                        onClick={() => setMenuOpen(false)}
-                      >
-                        <svg className="w-4 h-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        내 글 목록
-                      </Link>
-                      <Link
-                        href="/settings/blocked"
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
-                        onClick={() => setMenuOpen(false)}
-                      >
-                        <svg className="w-4 h-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                        </svg>
-                        차단 관리
-                      </Link>
-                      {isAdmin && (
-                        <Link
-                          href="/admin"
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
-                          onClick={() => setMenuOpen(false)}
-                        >
-                          <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                          </svg>
-                          관리자 패널
-                        </Link>
-                      )}
-                    </div>
-                    <div className="border-t border-gray-100 dark:border-gray-800 py-1">
-                      <button
-                        onClick={() => { signOut(); setMenuOpen(false) }}
-                        className="flex items-center gap-3 w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                        </svg>
-                        로그아웃
-                      </button>
-                      <Link
-                        href="/settings/withdraw"
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800"
-                        onClick={() => setMenuOpen(false)}
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6" />
-                        </svg>
-                        회원 탈퇴
-                      </Link>
-                    </div>
-                  </div>
-                </>
-              )}
-            </>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center gap-2 rounded-full px-3">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="bg-gradient-to-br from-blue-400 to-blue-600 text-white text-sm font-bold">
+                      {(nickname ?? '?')[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="hidden sm:inline text-sm font-medium">{nickname ?? '사용자'}</span>
+                  <ChevronDown className="hidden sm:block h-4 w-4 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel>
+                  <p className="font-semibold">{nickname ?? '사용자'}</p>
+                  <p className="text-xs text-muted-foreground font-normal mt-0.5">{user.email}</p>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/board/my" className="flex items-center gap-2 cursor-pointer">
+                    <FileText className="h-4 w-4" />
+                    내 글 목록
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/settings/blocked" className="flex items-center gap-2 cursor-pointer">
+                    <Ban className="h-4 w-4" />
+                    차단 관리
+                  </Link>
+                </DropdownMenuItem>
+                {isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin" className="flex items-center gap-2 cursor-pointer text-blue-600">
+                      <Shield className="h-4 w-4" />
+                      관리자 패널
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => signOut()} className="flex items-center gap-2 cursor-pointer text-destructive">
+                  <LogOut className="h-4 w-4" />
+                  로그아웃
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/settings/withdraw" className="flex items-center gap-2 cursor-pointer text-muted-foreground">
+                    <UserMinus className="h-4 w-4" />
+                    회원 탈퇴
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
-            <Link
-              href="/auth/login"
-              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 shadow-sm"
-            >
-              로그인
-            </Link>
+            <Button asChild size="sm">
+              <Link href="/auth/login">로그인</Link>
+            </Button>
           )}
         </div>
       </div>

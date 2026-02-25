@@ -10,7 +10,7 @@ import ImageUploader from '@/components/ImageUploader'
 
 export default function PostEditPage() {
   const { id } = useParams<{ id: string }>()
-  const { user, isAdmin } = useAuth()
+  const { user, anonId, isAdmin } = useAuth()
   const router = useRouter()
   const { categories } = useCategories()
   const availableCategories = categories.filter(cat => !cat.admin_only || isAdmin)
@@ -31,7 +31,7 @@ export default function PostEditPage() {
         .single()
 
       if (data) {
-        if (user && data.author_id !== user.id) {
+        if (anonId && data.author_id !== anonId) {
           router.push('/board')
           return
         }

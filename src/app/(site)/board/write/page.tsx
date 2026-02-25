@@ -9,7 +9,7 @@ import { colorActiveClass } from '@/lib/types'
 import ImageUploader from '@/components/ImageUploader'
 
 export default function PostWritePage() {
-  const { user, isAdmin } = useAuth()
+  const { user, anonId, isAdmin } = useAuth()
   const router = useRouter()
   const { categories } = useCategories()
   const availableCategories = categories.filter(cat => !cat.admin_only || isAdmin)
@@ -46,7 +46,7 @@ export default function PostWritePage() {
     setLoading(true)
 
     const { error: err } = await supabase.from('posts').insert({
-      author_id: user.id,
+      author_id: anonId!,
       category,
       title: title.trim(),
       content: content.trim(),

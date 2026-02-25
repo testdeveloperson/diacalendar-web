@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { createClient } from '@supabase/supabase-js'
+import { createHmac } from 'crypto'
+
+function computeAnonIdServer(email: string): string {
+  const hex = createHmac('sha256', process.env.NEXT_PUBLIC_ANON_SALT!)
+    .update(email.toLowerCase()).digest('hex')
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`
+}
 
 const r2 = new S3Client({
   region: 'auto',
@@ -67,7 +74,8 @@ export async function POST(req: NextRequest) {
     ext = 'webp'
   }
 
-  const key = `posts/${user.id}/${Date.now()}-${randomId}.${ext}`
+  const anonId = computeAnonIdServer(user.email!)
+  const key = `posts/${anonId}/${Date.now()}-${randomId}.${ext}`
 
   await r2.send(new PutObjectCommand({
     Bucket: process.env.R2_BUCKET_NAME!,

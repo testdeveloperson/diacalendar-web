@@ -23,7 +23,7 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
 ]
 
 export default function BoardPage() {
-  const { user, isLoading: authLoading } = useAuth()
+  const { user, anonId, isLoading: authLoading } = useAuth()
   const { categories } = useCategories()
   const [posts, setPosts] = useState<Post[]>([])
   const [category, setCategory] = useState<string | null>(null)
@@ -46,7 +46,7 @@ export default function BoardPage() {
   const offsetRef = useRef(0)
 
   useEffect(() => {
-    if (!user) {
+    if (!anonId) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setBlockedIds(prev => prev.size > 0 ? new Set() : prev)
       return
@@ -54,11 +54,11 @@ export default function BoardPage() {
     supabase
       .from('blocks')
       .select('blocked_id')
-      .eq('blocker_id', user.id)
+      .eq('blocker_id', anonId)
       .then(({ data }) => {
         if (data) setBlockedIds(new Set(data.map(b => b.blocked_id)))
       })
-  }, [user])
+  }, [anonId])
 
   // 페이지 떠날 때 마지막 방문 시간 갱신
   useEffect(() => {

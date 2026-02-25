@@ -9,7 +9,7 @@ import { Post, getCommentCount, formatRelativeTime, colorClass } from '@/lib/typ
 import { useCategories } from '@/hooks/useCategories'
 
 export default function MyPostsPage() {
-  const { user } = useAuth()
+  const { user, anonId } = useAuth()
   const { getCategoryLabel, getCategoryColor } = useCategories()
   const router = useRouter()
   const [posts, setPosts] = useState<Post[]>([])
@@ -17,19 +17,19 @@ export default function MyPostsPage() {
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null)
 
   useEffect(() => {
-    if (!user) return
+    if (!anonId) return
     const fetch = async () => {
       const { data } = await supabase
         .from('posts')
         .select('id,author_id,title,content,category,created_at,profiles(nickname),comments(count)')
-        .eq('author_id', user.id)
+        .eq('author_id', anonId)
         .order('created_at', { ascending: false })
 
       if (data) setPosts(data as unknown as Post[])
       setLoading(false)
     }
     fetch()
-  }, [user])
+  }, [anonId])
 
   if (!user) {
     router.push('/auth/login')
