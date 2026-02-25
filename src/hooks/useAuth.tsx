@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, useRef, ReactNode, useCallback } from 'react'
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { computeAnonId } from '@/lib/anonId'
@@ -22,6 +22,16 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
+async function resolveProfile(email: string) {
+  const id = await computeAnonId(email)
+  const { data } = await supabase
+    .from('profiles')
+    .select('nickname, is_admin')
+    .eq('id', id)
+    .maybeSingle()
+  return { anonId: id, nickname: data?.nickname ?? null, isAdmin: data?.is_admin ?? false }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
@@ -29,78 +39,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [nickname, setNickname] = useState<string | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const mountedRef = useRef(true)
-
-  const handleSession = useCallback(async (newSession: Session | null) => {
-    if (!mountedRef.current) return
-    setSession(newSession)
-    setUser(newSession?.user ?? null)
-
-    if (newSession?.user?.email) {
-      try {
-        const id = await computeAnonId(newSession.user.email)
-        if (!mountedRef.current) return
-        setAnonId(id)
-
-        const { data } = await supabase
-          .from('profiles')
-          .select('nickname, is_admin')
-          .eq('id', id)
-          .maybeSingle()
-
-        if (!mountedRef.current) return
-        setNickname(data?.nickname ?? null)
-        setIsAdmin(data?.is_admin ?? false)
-      } catch {
-        // profile fetch failed, keep user logged in with null nickname
-      }
-    } else {
-      setAnonId(null)
-      setNickname(null)
-      setIsAdmin(false)
-    }
-  }, [])
 
   useEffect(() => {
-    mountedRef.current = true
-    let initialDone = false
+    let cancelled = false
 
-    // 1. getSession으로 localStorage 세션 즉시 복원
-    const initSession = async () => {
-      try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession()
-        await handleSession(currentSession)
-      } catch {
-        // ignore
-      } finally {
-        if (mountedRef.current) {
-          initialDone = true
-          setIsLoading(false)
+    const applySession = async (s: Session | null) => {
+      if (cancelled) return
+      setSession(s)
+      setUser(s?.user ?? null)
+
+      if (s?.user?.email) {
+        try {
+          const profile = await resolveProfile(s.user.email)
+          if (cancelled) return
+          setAnonId(profile.anonId)
+          setNickname(profile.nickname)
+          setIsAdmin(profile.isAdmin)
+        } catch {
+          // keep user logged in, profile just failed
         }
+      } else {
+        setAnonId(null)
+        setNickname(null)
+        setIsAdmin(false)
       }
     }
-    initSession()
 
-    // 2. 이후 이벤트(로그인, 로그아웃, 토큰 갱신) 구독
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      // INITIAL_SESSION은 getSession과 중복되므로 스킵
-      if (event === 'INITIAL_SESSION') return
-      await handleSession(newSession)
+    // getSession으로 localStorage 세션 즉시 복원
+    supabase.auth.getSession().then(async ({ data: { session: s } }) => {
+      await applySession(s)
+      if (!cancelled) setIsLoading(false)
+    }).catch(() => {
+      if (!cancelled) setIsLoading(false)
     })
 
-    // 3. Safety fallback
-    const timeout = setTimeout(() => {
-      if (!initialDone && mountedRef.current) {
-        setIsLoading(false)
-      }
-    }, 3000)
+    // 이후 이벤트(로그인, 로그아웃, 토큰 갱신) 구독
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, s) => {
+      if (event === 'INITIAL_SESSION') return
+      await applySession(s)
+    })
 
     return () => {
-      mountedRef.current = false
+      cancelled = true
       subscription.unsubscribe()
-      clearTimeout(timeout)
     }
-  }, [handleSession])
+  }, [])
 
   const signInWithOAuth = async (provider: OAuthProvider) => {
     await supabase.auth.signInWithOAuth({
