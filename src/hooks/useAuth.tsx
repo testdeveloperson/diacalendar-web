@@ -64,24 +64,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // onAuthStateChange handles everything including INITIAL_SESSION
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      if (event === 'INITIAL_SESSION') {
-        // First event — restores session from localStorage
-        await handleSession(newSession)
-        initializedRef.current = true
-        setIsLoading(false)
-      } else {
-        // SIGNED_IN, SIGNED_OUT, TOKEN_REFRESHED, etc.
-        await handleSession(newSession)
+      try {
+        if (event === 'INITIAL_SESSION') {
+          await handleSession(newSession)
+        } else {
+          await handleSession(newSession)
+        }
+      } catch {
+        // ignore errors during session handling
+      } finally {
+        if (!initializedRef.current) {
+          initializedRef.current = true
+          setIsLoading(false)
+        }
       }
     })
 
-    // Safety fallback: if INITIAL_SESSION never fires (shouldn't happen, but just in case)
+    // Safety fallback: if INITIAL_SESSION never fires
     const timeout = setTimeout(() => {
       if (!initializedRef.current) {
         initializedRef.current = true
         setIsLoading(false)
       }
-    }, 5000)
+    }, 3000)
 
     return () => {
       subscription.unsubscribe()
